@@ -1,14 +1,11 @@
 .chat-container {
 	padding: 10px;
-	background-color: rgba(30, 30, 30, 0.9);
-	border-radius: 12px;
-	border: 1px solid rgba(255, 255, 255, 0.1);
+	/* Removed hardcoded background to inherit from Shell Menu */
 	color: #eee;
 }
 
-/* Base styles for dark (default/system) */
 .chat-header {
-	padding-bottom: 10px;
+	padding-bottom: 8px;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	margin-bottom: 10px;
 }
@@ -25,25 +22,26 @@
 .message-box {
 	padding: 8px 12px;
 	border-radius: 10px;
-	max-width: 90%;
+	max-width: 320px;
 }
 
+/* User Messages: Modern blue */
 .user-message {
-	background-color: rgba(52, 132, 240, 0.8);
+	background-color: #3484f0;
+	color: white;
 	align-self: flex-end;
-	margin-left: 20%;
 }
 
+/* Assistant Messages: Match shell popup background but lighter */
 .assistant-message {
-	background-color: rgba(60, 60, 60, 0.8);
+	background-color: rgba(255, 255, 255, 0.1);
 	align-self: flex-start;
-	margin-right: 20%;
 }
 
 .chat-input {
-	background-color: rgba(0, 0, 0, 0.3);
+	background-color: rgba(255, 255, 255, 0.05);
 	border-radius: 8px;
-	padding: 6px 10px;
+	padding: 8px 12px;
 	border: 1px solid rgba(255, 255, 255, 0.1);
 	color: white;
 }
@@ -54,7 +52,7 @@
 
 .terminal-box {
 	margin-top: 10px;
-	background-color: #1e1e1e;
+	background-color: #000;
 	border-radius: 6px;
 	padding: 8px;
 	border-left: 3px solid #3484f0;
@@ -66,38 +64,25 @@
 	color: #f8f8f2;
 }
 
-/* Light Theme Overrides */
-.chat-container.simple-light {
-	background-color: rgba(245, 245, 245, 0.98);
-	color: #222;
-	border: 1px solid rgba(0, 0, 0, 0.1);
+.settings-button {
+	padding: 6px;
+	border-radius: 8px;
+	margin-right: 8px;
+	background-color: rgba(255, 255, 255, 0.05);
 }
 
-.simple-light .assistant-message {
-	background-color: rgba(220, 220, 220, 0.9);
-	color: #222;
+.settings-button:hover {
+	background-color: rgba(255, 255, 255, 0.1);
 }
 
-.simple-light .chat-input {
-	background-color: rgba(255, 255, 255, 0.8);
-	color: #222;
-	border: 1px solid rgba(0, 0, 0, 0.1);
+.button {
+	padding: 4px 12px;
+	border-radius: 6px;
+	background-color: rgba(255, 255, 255, 0.1);
 }
 
-.simple-light .terminal-box {
-	background-color: #f0f0f0;
-	color: #222;
-	border-left-color: #3484f0;
-}
-
-.simple-light .terminal-text {
-	color: #222;
-}
-
-/* Dark Theme Overrides (Explicit) */
-.chat-container.simple-dark {
-	background-color: rgba(15, 15, 15, 0.98);
-	color: #eee;
+.button:hover {
+	background-color: rgba(255, 255, 255, 0.2);
 }
 
 .run-button {
@@ -105,7 +90,7 @@
 	background-color: #2ecc71;
 	color: white;
 	border-radius: 6px;
-	padding: 4px 8px;
+	padding: 4px 10px;
 	font-weight: bold;
 }
 
@@ -113,12 +98,35 @@
 	background-color: #27ae60;
 }
 
-.device-info-check {
-	padding: 6px;
-	border-radius: 8px;
-	background-color: rgba(255, 255, 255, 0.05);
+/* Light Theme Overrides */
+.simple-light .chat-container {
+	color: #222;
 }
 
-.device-info-check:checked {
-	background-color: #3484f0;
+.simple-light .chat-header {
+	border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+.simple-light .assistant-message {
+	background-color: rgba(0, 0, 0, 0.05);
+	color: #222;
+}
+
+.simple-light .chat-input {
+	background-color: white;
+	color: #222;
+	border-color: rgba(0, 0, 0, 0.1);
+}
+
+.simple-light .terminal-box {
+	background-color: #f0f0f0;
+}
+
+.simple-light .terminal-text {
+	color: #222;
+}
+
+.simple-light .settings-button,
+.simple-light .button {
+	background-color: rgba(0, 0, 0, 0.05);
 }

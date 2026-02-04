@@ -23,22 +23,26 @@ export class ApiClient {
 	async _sendOpenAI(apiKey, model, messages) {
 		const url = "https://api.openai.com/v1/chat/completions";
 		const body = JSON.stringify({
-			model: model || "gpt-4o",
+			model: model || "gpt-4o-mini",
 			messages: messages,
 		});
 
 		const message = Soup.Message.new("POST", url);
 		message.request_headers.append("Authorization", `Bearer ${apiKey}`);
 		message.request_headers.append("Content-Type", "application/json");
-		message.set_request_body_from_bytes("application/json", new GLib.Bytes(body));
 
-		const bytes = await this._session.send_and_read_async(
+		const encoder = new TextEncoder();
+		const bytes = GLib.Bytes.new(encoder.encode(body));
+		message.set_request_body_from_bytes("application/json", bytes);
+
+		const responseBytes = await this._session.send_and_read_async(
 			message,
 			GLib.PRIORITY_DEFAULT,
 			null,
 		);
+
 		const decoder = new TextDecoder("utf-8");
-		const responseText = decoder.decode(bytes.get_data());
+		const responseText = decoder.decode(responseBytes.get_data());
 
 		if (message.status_code !== 200) {
 			throw new Error(`OpenAI Error: ${message.status_code} - ${responseText}`);
@@ -49,16 +53,8 @@ export class ApiClient {
 	}
 
 	async _sendGemini(apiKey, model, messages) {
-		const url = `https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-1.5-flash"}:generateContent?key=${apiKey}`;
+		const url = `https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-2.5-flash"}:generateContent?key=${apiKey}`;
 
-		// Convert OpenAI-style messages to Gemini format
-		const contents = messages.map(m => ({
-			role: m.role === "assistant" ? "model" : "user",
-			parts: [{text: m.content}],
-		}));
-
-		// Gemini doesn't like multiple consecutive solar/model messages or system messages in contents
-		// This is a simplified conversion. Real Gemini API uses system_instruction for system role.
 		const systemMessage = messages.find(m => m.role === "system");
 		const chatMessages = messages.filter(m => m.role !== "system");
 
@@ -77,18 +73,18 @@ export class ApiClient {
 
 		const message = Soup.Message.new("POST", url);
 		message.request_headers.append("Content-Type", "application/json");
-		message.set_request_body_from_bytes(
-			"application/json",
-			new GLib.Bytes(JSON.stringify(body)),
-		);
 
-		const bytes = await this._session.send_and_read_async(
+		const encoder = new TextEncoder();
+		const bytes = GLib.Bytes.new(encoder.encode(JSON.stringify(body)));
+		message.set_request_body_from_bytes("application/json", bytes);
+
+		const responseBytes = await this._session.send_and_read_async(
 			message,
 			GLib.PRIORITY_DEFAULT,
 			null,
 		);
 		const decoder = new TextDecoder("utf-8");
-		const responseText = decoder.decode(bytes.get_data());
+		const responseText = decoder.decode(responseBytes.get_data());
 
 		if (message.status_code !== 200) {
 			throw new Error(`Gemini Error: ${message.status_code} - ${responseText}`);

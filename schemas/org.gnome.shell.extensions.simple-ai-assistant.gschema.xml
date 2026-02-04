@@ -2,7 +2,7 @@
 <schemalist>
   <schema id="org.gnome.shell.extensions.simple-ai-assistant" path="/org/gnome/shell/extensions/simple-ai-assistant/">
     <key name="api-provider" type="s">
-      <default>'openai'</default>
+      <default>'gemini'</default>
       <summary>API Provider</summary>
     </key>
     <key name="openai-api-key" type="s">
@@ -12,13 +12,14 @@
       <default>''</default>
     </key>
     <key name="openai-model" type="s">
-      <default>'gpt-5-mini'</default>
+      <default>'gpt-4o-mini'</default>
     </key>
     <key name="gemini-model" type="s">
       <default>'gemini-2.5-flash'</default>
     </key>
     <key name="send-device-info" type="b">
       <default>true</default>
+      <summary>Share system details (CPU, GPU, RAM, OS version) with the AI for better technical assistance.</summary>
     </key>
     <key name="theme" type="s">
       <default>'system'</default>
@@ -26,7 +27,10 @@
     <key name="history-limit" type="i">
       <default>30</default>
       <summary>History Limit</summary>
-      <description>Maximum number of messages (user + assistant) to keep in context.</description>
+    </key>
+    <key name="chat-height" type="i">
+      <default>500</default>
+      <summary>Chat Window Height</summary>
     </key>
   </schema>
 </schemalist>

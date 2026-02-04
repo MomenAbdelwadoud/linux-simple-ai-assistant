@@ -1,7 +1,7 @@
 {
 	"uuid": "simple-ai-assistant@momen.codes",
 	"name": "Simple AI Assistant",
-	"description": "A simple light-weight chat assistant with markdown, code highlighting and terminal command support",
+	"description": "A light-weight, private agentic AI assistant with terminal command support. No data is collected; everything stays on your machine.",
 	"shell-version": ["45", "46", "47"],
 	"url": "https://github.com/momen/simple-ai-assistant",
 	"gettext-domain": "simple-ai-assistant",

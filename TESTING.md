@@ -21,7 +21,7 @@ To test your extension without restarting your main desktop session, you can use
    Open a terminal and run:
 
     ```bash
-    dbus-run-session gnome-shell --nested --wayland
+    MUTTER_DEBUG_DUMMY_MODE_SPECS=2560x1440 dbus-run-session gnome-shell --nested --wayland
     ```
 
     A new window will open with a fresh GNOME session.

@@ -1,45 +1,42 @@
-# Simple AI Assistant GNOME Extension
+# Simple AI Assistant
 
-A lightweight, modular chat assistant for your GNOME desktop.
+A light-weight, private agentic AI assistant for GNOME Shell. Get things done with terminal command support and local system context.
 
-## ✨ Features
+## 🌟 Features
 
-- **Dual API Support**: OpenAI (`gpt-4o-mini`) and Gemini (`gemini-1.5-flash`).
-- **🐚 Terminal Integration**: AI can suggest commands that you can run with a single click.
-- **🌗 Theme Support**: Follow the system theme or choose "Simple Light" / "Simple Dark".
-- **💾 Lightweight History**: Persistent JSON storage with automatic truncation (keeps last 20 messages).
-- **💻 Device Info Helper**: Toggleable system spec sharing for better debugging assistance.
-- **🧩 Modular Architecture**: Cleanly separated logic for prompts, history, and system integration.
+- **Agentic Loop**: AI can propose commands, see output, and continue the task.
+- **Privacy Focus**: **No data is collected.** Your API keys and chat history are stored locally on your machine.
+- **System Awareness**: Optionally share system details (CPU, GPU, RAM, OS) for better technical assistance.
+- **Theme Support**: Automatically matches your system theme (Light/Dark).
+- **History Management**: Local history storage with configurable message limits.
+
+## 🛠 Prerequisites
+
+- GNOME Shell 45+
+- API Key for OpenAI or Google Gemini
 
 ## 🚀 Installation
 
-1. Create the extension directory:
-
+1. Clone or download this repository.
+2. Copy the folder to your local extensions directory:
     ```bash
-    mkdir -p ~/.local/share/gnome-shell/extensions/simple-ai-assistant@momen.codes
+    cp -r . ~/.local/share/gnome-shell/extensions/simple-ai-assistant@momen.codes
     ```
-
-2. Copy the files to that directory:
-
-    ```bash
-    cp -r * ~/.local/share/gnome-shell/extensions/simple-ai-assistant@momen.codes/
-    ```
-
-3. Compile the GSettings schema:
-
+3. Compile the settings schema:
     ```bash
     glib-compile-schemas ~/.local/share/gnome-shell/extensions/simple-ai-assistant@momen.codes/schemas/
     ```
+4. Restart GNOME Shell (Alt+F2 + `r` on X11, or Log out/Log in on Wayland).
+5. Enable the extension using GNOME Extensions app.
 
-4. Restart GNOME Shell:
-    - **Wayland**: Log out and log back in.
-    - **X11**: Press `Alt+F2`, type `r`, and press `Enter`.
+## 📝 Privacy Disclosure
 
-5. Enable the extension:
-    ```bash
-    gnome-extensions enable simple-ai-assistant@momen.codes
-    ```
+**Simple AI Assistant** is designed with privacy in mind:
 
-## 🛡 Security
+- All data stays on your machine.
+- Your history is stored in `~/.cache/simple-ai-assistant/`.
+- No telemetry or tracking is included.
 
-Commands provided by the AI are **never run automatically**. You must explicitly click the "Run Command" button in the chat UI. Always review commands before running them.
+## 👨‍💻 Credits
+
+Developed by **Momen Elkhalifa** ([momen.codes](https://momen.codes)).
