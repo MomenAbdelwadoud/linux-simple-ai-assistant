@@ -1,0 +1,124 @@
+.chat-container {
+	padding: 10px;
+	background-color: rgba(30, 30, 30, 0.9);
+	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	color: #eee;
+}
+
+/* Base styles for dark (default/system) */
+.chat-header {
+	padding-bottom: 10px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	margin-bottom: 10px;
+}
+
+.chat-header StLabel {
+	font-weight: bold;
+	font-size: 1.1em;
+}
+
+.chat-box > * {
+	margin-bottom: 12px;
+}
+
+.message-box {
+	padding: 8px 12px;
+	border-radius: 10px;
+	max-width: 90%;
+}
+
+.user-message {
+	background-color: rgba(52, 132, 240, 0.8);
+	align-self: flex-end;
+	margin-left: 20%;
+}
+
+.assistant-message {
+	background-color: rgba(60, 60, 60, 0.8);
+	align-self: flex-start;
+	margin-right: 20%;
+}
+
+.chat-input {
+	background-color: rgba(0, 0, 0, 0.3);
+	border-radius: 8px;
+	padding: 6px 10px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	color: white;
+}
+
+.chat-input:focus {
+	border-color: #3484f0;
+}
+
+.terminal-box {
+	margin-top: 10px;
+	background-color: #1e1e1e;
+	border-radius: 6px;
+	padding: 8px;
+	border-left: 3px solid #3484f0;
+}
+
+.terminal-text {
+	font-family: "Monospace", monospace;
+	font-size: 0.9em;
+	color: #f8f8f2;
+}
+
+/* Light Theme Overrides */
+.chat-container.simple-light {
+	background-color: rgba(245, 245, 245, 0.98);
+	color: #222;
+	border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.simple-light .assistant-message {
+	background-color: rgba(220, 220, 220, 0.9);
+	color: #222;
+}
+
+.simple-light .chat-input {
+	background-color: rgba(255, 255, 255, 0.8);
+	color: #222;
+	border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.simple-light .terminal-box {
+	background-color: #f0f0f0;
+	color: #222;
+	border-left-color: #3484f0;
+}
+
+.simple-light .terminal-text {
+	color: #222;
+}
+
+/* Dark Theme Overrides (Explicit) */
+.chat-container.simple-dark {
+	background-color: rgba(15, 15, 15, 0.98);
+	color: #eee;
+}
+
+.run-button {
+	margin-top: 8px;
+	background-color: #2ecc71;
+	color: white;
+	border-radius: 6px;
+	padding: 4px 8px;
+	font-weight: bold;
+}
+
+.run-button:hover {
+	background-color: #27ae60;
+}
+
+.device-info-check {
+	padding: 6px;
+	border-radius: 8px;
+	background-color: rgba(255, 255, 255, 0.05);
+}
+
+.device-info-check:checked {
+	background-color: #3484f0;
+}
