@@ -1,0 +1,9 @@
+{
+	"uuid": "simple-ai-assistant@momen.codes",
+	"name": "Simple AI Assistant",
+	"description": "A simple light-weight chat assistant with markdown, code highlighting and terminal command support",
+	"shell-version": ["45", "46", "47"],
+	"url": "https://github.com/momen/simple-ai-assistant",
+	"gettext-domain": "simple-ai-assistant",
+	"settings-schema": "org.gnome.shell.extensions.simple-ai-assistant"
+}
