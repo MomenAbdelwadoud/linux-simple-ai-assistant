@@ -23,7 +23,7 @@ export class ApiClient {
 	async _sendOpenAI(apiKey, model, messages) {
 		const url = "https://api.openai.com/v1/chat/completions";
 		const body = JSON.stringify({
-			model: model || "gpt-4o-mini",
+			model: model || "gpt-5-mini",
 			messages: messages,
 		});
 

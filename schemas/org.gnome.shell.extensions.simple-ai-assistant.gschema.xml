@@ -12,7 +12,7 @@
       <default>''</default>
     </key>
     <key name="openai-model" type="s">
-      <default>'gpt-4o-mini'</default>
+      <default>'gpt-5-mini'</default>
     </key>
     <key name="gemini-model" type="s">
       <default>'gemini-2.5-flash'</default>
@@ -21,16 +21,17 @@
       <default>true</default>
       <summary>Share system details (CPU, GPU, RAM, OS version) with the AI for better technical assistance.</summary>
     </key>
-    <key name="theme" type="s">
-      <default>'system'</default>
-    </key>
     <key name="history-limit" type="i">
       <default>30</default>
       <summary>History Limit</summary>
     </key>
     <key name="chat-height" type="i">
-      <default>500</default>
+      <default>1000</default>
       <summary>Chat Window Height</summary>
+    </key>
+    <key name="chat-width" type="i">
+      <default>500</default>
+      <summary>Chat Window Width</summary>
     </key>
   </schema>
 </schemalist>

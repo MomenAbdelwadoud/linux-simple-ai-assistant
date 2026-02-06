@@ -1,6 +1,6 @@
 .chat-container {
 	padding: 10px;
-	/* Removed hardcoded background to inherit from Shell Menu */
+	background-color: transparent !important;
 	color: #eee;
 }
 
@@ -22,28 +22,70 @@
 .message-box {
 	padding: 8px 12px;
 	border-radius: 10px;
-	max-width: 320px;
+	max-width: 90%; /* Increased for high-res flexibility */
 }
 
-/* User Messages: Modern blue */
 .user-message {
 	background-color: #3484f0;
 	color: white;
 	align-self: flex-end;
 }
 
-/* Assistant Messages: Match shell popup background but lighter */
 .assistant-message {
 	background-color: rgba(255, 255, 255, 0.1);
 	align-self: flex-start;
 }
 
+/* Empty State Styling */
+.empty-state {
+	padding: 20px;
+	spacing: 15px;
+}
+
+.empty-state-title {
+	font-weight: bold;
+	font-size: 1.25em;
+	opacity: 0.9;
+	text-align: center;
+	margin-bottom: 15px;
+}
+
+.example-chip {
+	background-color: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 20px;
+	padding: 10px 20px;
+	margin-bottom: 10px;
+	transition-duration: 200ms;
+}
+
+.example-chip:hover {
+	background-color: rgba(255, 255, 255, 0.1);
+	border-color: #3484f0;
+}
+
+.example-chip StLabel {
+	font-size: 1em;
+	opacity: 0.8;
+	text-align: center;
+}
+
+/* API Reminder Styling */
+.api-reminder {
+	color: #f39c12;
+	font-size: 0.9em;
+	font-weight: bold;
+	margin-bottom: 6px;
+	text-align: center;
+}
+
 .chat-input {
 	background-color: rgba(255, 255, 255, 0.05);
 	border-radius: 8px;
-	padding: 8px 12px;
+	padding: 10px 14px;
 	border: 1px solid rgba(255, 255, 255, 0.1);
 	color: white;
+	font-size: 1.1em;
 }
 
 .chat-input:focus {
@@ -52,15 +94,15 @@
 
 .terminal-box {
 	margin-top: 10px;
-	background-color: #000;
+	background-color: rgba(0, 0, 0, 0.5);
 	border-radius: 6px;
-	padding: 8px;
+	padding: 12px;
 	border-left: 3px solid #3484f0;
 }
 
 .terminal-text {
 	font-family: "Monospace", monospace;
-	font-size: 0.9em;
+	font-size: 1em;
 	color: #f8f8f2;
 }
 
@@ -86,47 +128,14 @@
 }
 
 .run-button {
-	margin-top: 8px;
+	margin-top: 10px;
 	background-color: #2ecc71;
 	color: white;
 	border-radius: 6px;
-	padding: 4px 10px;
+	padding: 6px 12px;
 	font-weight: bold;
 }
 
 .run-button:hover {
 	background-color: #27ae60;
-}
-
-/* Light Theme Overrides */
-.simple-light .chat-container {
-	color: #222;
-}
-
-.simple-light .chat-header {
-	border-bottom-color: rgba(0, 0, 0, 0.1);
-}
-
-.simple-light .assistant-message {
-	background-color: rgba(0, 0, 0, 0.05);
-	color: #222;
-}
-
-.simple-light .chat-input {
-	background-color: white;
-	color: #222;
-	border-color: rgba(0, 0, 0, 0.1);
-}
-
-.simple-light .terminal-box {
-	background-color: #f0f0f0;
-}
-
-.simple-light .terminal-text {
-	color: #222;
-}
-
-.simple-light .settings-button,
-.simple-light .button {
-	background-color: rgba(0, 0, 0, 0.05);
 }

@@ -16,7 +16,6 @@ import * as Utils from "./utils.js";
 
 export default class SimpleAiAssistantExtension extends Extension {
 	enable() {
-		console.log("Simple AI Assistant: Enabling...");
 		try {
 			this._settings = this.getSettings();
 			this._api = new Api.ApiClient();
@@ -39,60 +38,62 @@ export default class SimpleAiAssistantExtension extends Extension {
 					icon.style_class = "system-status-icon";
 					this._indicator.add_child(icon);
 				}
-			} catch (e) {
-				console.error(`Simple AI Assistant: Icon error: ${e.message}`);
-			}
+			} catch (e) {}
 
 			this._buildUi();
 			Main.panel.addToStatusArea("simple-ai-assistant", this._indicator);
 
-			this._themeId = this._settings.connect("changed::theme", () =>
-				this._updateTheme(),
+			this._heightId = this._settings.connect("changed::chat-height", () =>
+				this._updateSize(),
 			);
-			this._heightId = this._settings.connect("changed::chat-height", () => {
-				if (this._chatContainer)
-					this._chatContainer.height = this._settings.get_int("chat-height");
-			});
+			this._widthId = this._settings.connect("changed::chat-width", () =>
+				this._updateSize(),
+			);
 
-			this._updateTheme();
-			console.log("Simple AI Assistant: Enabled successfully");
-		} catch (e) {
-			console.error(
-				`Simple AI Assistant: FATAL ENABLE ERROR: ${e.message}\n${e.stack}`,
+			this._providerId = this._settings.connect("changed::api-provider", () =>
+				this._updateApiReminder(),
 			);
+			this._updateApiReminder();
+		} catch (e) {
+			console.error(`Simple AI Assistant: Enable Error: ${e.message}`);
 		}
 	}
 
 	disable() {
-		if (this._themeId) this._settings.disconnect(this._themeId);
 		if (this._heightId) this._settings.disconnect(this._heightId);
+		if (this._widthId) this._settings.disconnect(this._widthId);
+		if (this._providerId) this._settings.disconnect(this._providerId);
 		if (this._indicator) this._indicator.destroy();
-
-		this._themeId = null;
-		this._heightId = null;
 		this._indicator = null;
 		this._settings = null;
 		this._api = null;
 		this._chatContainer = null;
 	}
 
-	_updateTheme() {
+	_updateSize() {
 		if (!this._chatContainer) return;
-		const theme = this._settings.get_string("theme");
-		this._chatContainer.remove_style_class_name("simple-light");
-		this._chatContainer.remove_style_class_name("simple-dark");
-		if (theme === "light") this._chatContainer.add_style_class_name("simple-light");
-		else if (theme === "dark")
-			this._chatContainer.add_style_class_name("simple-dark");
+
+		const monitor = Main.layoutManager.primaryMonitor;
+		const maxWidth = monitor.width * 0.9;
+		const maxHeight = monitor.height * 0.9;
+
+		// Default to 40% height if unset or too small, otherwise use setting
+		let targetHeight = this._settings.get_int("chat-height");
+		if (targetHeight < 100) targetHeight = Math.floor(monitor.height * 0.4);
+
+		let targetWidth = this._settings.get_int("chat-width");
+		if (targetWidth < 100) targetWidth = 500;
+
+		this._chatContainer.width = Math.min(targetWidth, maxWidth);
+		this._chatContainer.height = Math.min(targetHeight, maxHeight);
 	}
 
 	_buildUi() {
-		const chatHeight = this._settings.get_int("chat-height") || 500;
 		this._chatContainer = new St.BoxLayout();
 		this._chatContainer.vertical = true;
 		this._chatContainer.style_class = "chat-container";
-		this._chatContainer.width = 400;
-		this._chatContainer.height = chatHeight;
+
+		this._updateSize();
 
 		const header = new St.BoxLayout();
 		header.style_class = "chat-header";
@@ -132,25 +133,84 @@ export default class SimpleAiAssistantExtension extends Extension {
 		this._chatScroll.add_child(this._chatBox);
 		this._chatContainer.add_child(this._chatScroll);
 
-		if (this._history) {
-			this._history
-				.filter(m => m.role !== "system")
-				.forEach(m => this._addMessageToUi(m.role, m.content));
-		}
+		// Input Area + API Reminder
+		const bottomArea = new St.BoxLayout();
+		bottomArea.vertical = true;
+
+		this._apiReminder = new St.Label({
+			style_class: "api-reminder",
+			text: "⚠️ Please add your API Key in settings if you haven't already",
+			visible: false,
+		});
+		bottomArea.add_child(this._apiReminder);
 
 		const inputArea = new St.BoxLayout();
 		inputArea.style_class = "chat-input-area";
-
 		this._input = new St.Entry();
 		this._input.style_class = "chat-input";
 		this._input.hint_text = "Type a message...";
 		this._input.x_expand = true;
 		this._input.clutter_text.connect("activate", () => this._sendMessage());
-
 		inputArea.add_child(this._input);
-		this._chatContainer.add_child(inputArea);
+		bottomArea.add_child(inputArea);
+
+		this._chatContainer.add_child(bottomArea);
+
+		// Populate content
+		if (this._history && this._history.filter(m => m.role !== "system").length > 0) {
+			this._history
+				.filter(m => m.role !== "system")
+				.forEach(m => this._addMessageToUi(m.role, m.content));
+		} else {
+			this._showEmptyState();
+		}
 
 		this._indicator.menu.box.add_child(this._chatContainer);
+	}
+
+	_showEmptyState() {
+		this._chatBox.destroy_all_children();
+
+		this._emptyState = new St.BoxLayout();
+		this._emptyState.vertical = true;
+		this._emptyState.style_class = "empty-state";
+		this._emptyState.x_expand = true;
+		this._emptyState.y_expand = true;
+		this._emptyState.y_align = Clutter.ActorAlign.CENTER;
+
+		const title = new St.Label({
+			text: "What can I help with today?",
+			style_class: "empty-state-title",
+		});
+		this._emptyState.add_child(title);
+
+		const examples = [
+			"My bluetooth doesn't turn on",
+			"Check why my system resource usage is high",
+			"How to take a screenshot in GNOME?",
+		];
+
+		examples.forEach(ex => {
+			const btn = new St.Button({
+				label: ex,
+				style_class: "example-chip",
+				x_align: Clutter.ActorAlign.CENTER,
+			});
+			btn.connect("clicked", () => {
+				this._input.text = ex;
+				this._sendMessage();
+			});
+			this._emptyState.add_child(btn);
+		});
+
+		this._chatBox.add_child(this._emptyState);
+	}
+
+	_updateApiReminder() {
+		if (!this._apiReminder) return;
+		const provider = this._settings.get_string("api-provider");
+		const key = this._settings.get_string(`${provider}-api-key`);
+		this._apiReminder.visible = !key;
 	}
 
 	async _sendMessage() {
@@ -158,11 +218,15 @@ export default class SimpleAiAssistantExtension extends Extension {
 		if (!text) return;
 		this._input.set_text("");
 
+		if (this._emptyState) {
+			this._chatBox.remove_child(this._emptyState);
+			this._emptyState = null;
+		}
+
 		if (this._history.length === 0 || this._history[0].role !== "system") {
 			this._history.unshift({role: "system", content: SYSTEM_PROMPT});
 		}
 
-		// Use global setting only
 		if (
 			this._history.filter(m => m.role !== "system").length === 0 &&
 			this._settings.get_boolean("send-device-info")
@@ -175,15 +239,23 @@ export default class SimpleAiAssistantExtension extends Extension {
 
 		this._history.push({role: "user", content: text});
 		this._addMessageToUi("user", text);
-
 		await this._getAiResponse();
 	}
 
 	async _getAiResponse() {
 		try {
+			this._updateApiReminder();
 			const provider = this._settings.get_string("api-provider");
 			const apiKey = this._settings.get_string(`${provider}-api-key`);
 			const model = this._settings.get_string(`${provider}-model`);
+
+			if (!apiKey) {
+				this._addMessageToUi(
+					"assistant",
+					"<b>API Key missing!</b> Please go to settings.",
+				);
+				return;
+			}
 
 			const loadingId = this._addMessageToUi("assistant", "Thinking...");
 			const response = await this._api.sendMessage(
@@ -206,10 +278,15 @@ export default class SimpleAiAssistantExtension extends Extension {
 		this._history = [];
 		History.clearHistory();
 		this._chatBox.destroy_all_children();
+		this._showEmptyState();
 	}
 
 	_addMessageToUi(role, content) {
 		if (!content) return null;
+		if (this._emptyState) {
+			this._chatBox.remove_child(this._emptyState);
+			this._emptyState = null;
+		}
 
 		const msgBox = new St.BoxLayout();
 		msgBox.vertical = true;
@@ -241,7 +318,6 @@ export default class SimpleAiAssistantExtension extends Extension {
 
 		this._chatBox.add_child(msgBox);
 
-		// Improved scrolling logic
 		GLib.idle_add(GLib.PRIORITY_LOW, () => {
 			if (this._chatScroll) {
 				const adj = this._chatScroll.vscroll.adjustment;
@@ -256,11 +332,7 @@ export default class SimpleAiAssistantExtension extends Extension {
 		const box = new St.BoxLayout();
 		box.vertical = true;
 		box.style_class = "terminal-box";
-
-		const label = new St.Label();
-		label.text = "Executing...";
-		label.style_class = "terminal-text";
-
+		const label = new St.Label({text: "Executing...", style_class: "terminal-text"});
 		box.add_child(label);
 		msgBox.add_child(box);
 
@@ -270,16 +342,17 @@ export default class SimpleAiAssistantExtension extends Extension {
 			const out = decoder.decode(new Uint8Array(stdout.get_data())).trim();
 			const err = decoder.decode(new Uint8Array(stderr.get_data())).trim();
 			const result = out || err || "Done (no output)";
-
 			label.text = result.split("\n").slice(-3).join("\n");
-
 			this._history.push({
 				role: "user",
 				content: `COMMAND OUTPUT for "${cmd}":\n${result}`,
 			});
 			await this._getAiResponse();
 		} catch (e) {
+			const errorMsg = `COMMAND ERROR for "${cmd}":\n${e.message}`;
 			label.text = `Error: ${e.message}`;
+			this._history.push({role: "user", content: errorMsg});
+			await this._getAiResponse();
 		}
 	}
 
@@ -294,10 +367,10 @@ export default class SimpleAiAssistantExtension extends Extension {
 					GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD,
 					null,
 				);
-				const outStream = new Gio.DataInputStream({
+				const os = new Gio.DataInputStream({
 					base_stream: new Gio.UnixInputStream({fd: stdout, close_fd: true}),
 				});
-				const errStream = new Gio.DataInputStream({
+				const es = new Gio.DataInputStream({
 					base_stream: new Gio.UnixInputStream({fd: stderr, close_fd: true}),
 				});
 				const ob = [],
@@ -318,7 +391,7 @@ export default class SimpleAiAssistantExtension extends Extension {
 							});
 						f();
 					});
-				Promise.all([read(outStream, ob), read(errStream, eb)]).then(() => {
+				Promise.all([read(os, ob), read(es, eb)]).then(() => {
 					const merge = bufs => {
 						const total = bufs.reduce((a, b) => a + b.length + 1, 0);
 						const u = new Uint8Array(total);

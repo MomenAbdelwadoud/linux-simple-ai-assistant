@@ -13,7 +13,7 @@ export default class SimpleAiAssistantPreferences extends ExtensionPreferences {
 		const page = new Adw.PreferencesPage();
 		window.add(page);
 
-		// API Group
+		// 1. API Group
 		const apiGroup = new Adw.PreferencesGroup({title: _("API Settings")});
 		page.add(apiGroup);
 
@@ -66,31 +66,37 @@ export default class SimpleAiAssistantPreferences extends ExtensionPreferences {
 			Gio.SettingsBindFlags.DEFAULT,
 		);
 
-		// Appearance Group
-		const themeGroup = new Adw.PreferencesGroup({title: _("Appearance")});
-		page.add(themeGroup);
+		// 2. Appearance Group
+		const appearanceGroup = new Adw.PreferencesGroup({title: _("Appearance")});
+		page.add(appearanceGroup);
 
-		const themeRow = new Adw.ComboRow({
-			title: _("Theme"),
-			model: new Gtk.StringList({
-				strings: ["Follow System", "Simple Light", "Simple Dark"],
+		const widthRow = new Adw.ActionRow({
+			title: _("Window Width"),
+			subtitle: _("Adjust width (400px - 1200px)"),
+		});
+		const widthSpin = new Gtk.SpinButton({
+			adjustment: new Gtk.Adjustment({
+				lower: 400,
+				upper: 1200,
+				step_increment: 50,
+				value: settings.get_int("chat-width"),
 			}),
+			valign: Gtk.Align.CENTER,
 		});
-		themeGroup.add(themeRow);
-		const themeMap = ["system", "light", "dark"];
-		themeRow.connect("notify::selected", () => {
-			settings.set_string("theme", themeMap[themeRow.selected]);
+		widthSpin.connect("value-changed", () => {
+			settings.set_int("chat-width", widthSpin.get_value_as_int());
 		});
-		themeRow.selected = themeMap.indexOf(settings.get_string("theme"));
+		widthRow.add_suffix(widthSpin);
+		appearanceGroup.add(widthRow);
 
 		const heightRow = new Adw.ActionRow({
-			title: _("Chat Window Height"),
-			subtitle: _("Adjust window height (300px - 1000px)"),
+			title: _("Window Height"),
+			subtitle: _("Adjust height (400px - 1600px)"),
 		});
 		const heightSpin = new Gtk.SpinButton({
 			adjustment: new Gtk.Adjustment({
-				lower: 300,
-				upper: 1000,
+				lower: 400,
+				upper: 1600,
 				step_increment: 50,
 				value: settings.get_int("chat-height"),
 			}),
@@ -100,47 +106,11 @@ export default class SimpleAiAssistantPreferences extends ExtensionPreferences {
 			settings.set_int("chat-height", heightSpin.get_value_as_int());
 		});
 		heightRow.add_suffix(heightSpin);
-		themeGroup.add(heightRow);
+		appearanceGroup.add(heightRow);
 
-		// Data Group
-		const dataGroup = new Adw.PreferencesGroup({title: _("Data & Privacy")});
-		page.add(dataGroup);
-
-		const deviceInfoRow = new Adw.SwitchRow({
-			title: _("Share System Details"),
-			subtitle: _(
-				"Sends CPU, GPU, RAM, and OS info to AI for better technical answers",
-			),
-		});
-		dataGroup.add(deviceInfoRow);
-		settings.bind(
-			"send-device-info",
-			deviceInfoRow,
-			"active",
-			Gio.SettingsBindFlags.DEFAULT,
-		);
-
-		const privacyRow = new Adw.ActionRow({
-			title: _("Privacy Shield"),
-			subtitle: _(
-				"No data is collected anywhere. All chat history is stored locally on your machine.",
-			),
-		});
-		dataGroup.add(privacyRow);
-
-		// About Group
-		const aboutGroup = new Adw.PreferencesGroup({title: _("About")});
-		page.add(aboutGroup);
-
-		const creditsRow = new Adw.ActionRow({
-			title: _("Developed by Momen Elkhalifa"),
-			subtitle: _("Visit website: momen.codes"),
-			activatable: true,
-		});
-		creditsRow.connect("activated", () => {
-			GLib.spawn_command_line_async("xdg-open https://momen.codes");
-		});
-		aboutGroup.add(creditsRow);
+		// 3. General Settings Group
+		const generalGroup = new Adw.PreferencesGroup({title: _("General Settings")});
+		page.add(generalGroup);
 
 		const historyRow = new Adw.ActionRow({
 			title: _("History Context Limit"),
@@ -159,6 +129,50 @@ export default class SimpleAiAssistantPreferences extends ExtensionPreferences {
 			settings.set_int("history-limit", limitSpin.get_value_as_int());
 		});
 		historyRow.add_suffix(limitSpin);
-		aboutGroup.add(historyRow);
+		generalGroup.add(historyRow);
+
+		const deviceInfoRow = new Adw.SwitchRow({
+			title: _("Share System Details"),
+			subtitle: _(
+				"Sends CPU, GPU, RAM, and OS info to AI for better technical answers",
+			),
+		});
+		generalGroup.add(deviceInfoRow);
+		settings.bind(
+			"send-device-info",
+			deviceInfoRow,
+			"active",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+
+		// 4. Information Group
+		const infoGroup = new Adw.PreferencesGroup({title: _("Information")});
+		page.add(infoGroup);
+
+		const privacyRow = new Adw.ActionRow({
+			title: _("Privacy"),
+			subtitle: _(
+				"No data is collected anywhere. All chat history is stored locally on your machine.",
+			),
+		});
+		const privacyIcon = new Gtk.Image({
+			icon_name: "dialog-warning-symbolic",
+		});
+		privacyRow.add_prefix(privacyIcon);
+		infoGroup.add(privacyRow);
+
+		const creditsRow = new Adw.ActionRow({
+			title: _("Developed by Momen Elkhalifa"),
+			subtitle: _("Visit website: momen.codes"),
+			activatable: true,
+		});
+		const creditsIcon = new Gtk.Image({
+			icon_name: "avatar-default-symbolic",
+		});
+		creditsRow.add_prefix(creditsIcon);
+		creditsRow.connect("activated", () => {
+			GLib.spawn_command_line_async("xdg-open https://momen.codes");
+		});
+		infoGroup.add(creditsRow);
 	}
 }
