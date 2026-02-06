@@ -17,6 +17,16 @@
     <key name="gemini-model" type="s">
       <default>'gemini-2.5-flash'</default>
     </key>
+    <key name="claude-api-key" type="s">
+      <default>''</default>
+    </key>
+    <key name="claude-model" type="s">
+      <default>'claude-sonnet-4-20250514'</default>
+    </key>
+    <key name="keyboard-shortcut" type="as">
+      <default>[]</default>
+      <summary>Keyboard shortcut to open the assistant</summary>
+    </key>
     <key name="send-device-info" type="b">
       <default>true</default>
       <summary>Share system details (CPU, GPU, RAM, OS version) with the AI for better technical assistance.</summary>

@@ -1,12 +1,13 @@
+/* Theme-aware styles for Simple AI Assistant */
+
 .chat-container {
 	padding: 10px;
 	background-color: transparent !important;
-	color: #eee;
 }
 
 .chat-header {
 	padding-bottom: 8px;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	border-bottom: 1px solid rgba(128, 128, 128, 0.2);
 	margin-bottom: 10px;
 }
 
@@ -22,17 +23,32 @@
 .message-box {
 	padding: 8px 12px;
 	border-radius: 10px;
-	max-width: 90%; /* Increased for high-res flexibility */
+	max-width: 90%;
+}
+
+.message-header {
+	margin-bottom: 4px;
+}
+
+.copy-button {
+	padding: 4px;
+	border-radius: 4px;
+	background-color: transparent;
+	opacity: 0.6;
+}
+
+.copy-button:hover {
+	opacity: 1;
+	background-color: rgba(128, 128, 128, 0.2);
 }
 
 .user-message {
-	background-color: #3484f0;
-	color: white;
+	background-color: rgba(52, 132, 240, 0.8);
 	align-self: flex-end;
 }
 
 .assistant-message {
-	background-color: rgba(255, 255, 255, 0.1);
+	background-color: rgba(128, 128, 128, 0.15);
 	align-self: flex-start;
 }
 
@@ -51,8 +67,8 @@
 }
 
 .example-chip {
-	background-color: rgba(255, 255, 255, 0.05);
-	border: 1px solid rgba(255, 255, 255, 0.1);
+	background-color: rgba(128, 128, 128, 0.1);
+	border: 1px solid rgba(128, 128, 128, 0.2);
 	border-radius: 20px;
 	padding: 10px 20px;
 	margin-bottom: 10px;
@@ -60,8 +76,8 @@
 }
 
 .example-chip:hover {
-	background-color: rgba(255, 255, 255, 0.1);
-	border-color: #3484f0;
+	background-color: rgba(128, 128, 128, 0.2);
+	border-color: rgba(52, 132, 240, 0.6);
 }
 
 .example-chip StLabel {
@@ -80,62 +96,71 @@
 }
 
 .chat-input {
-	background-color: rgba(255, 255, 255, 0.05);
+	background-color: rgba(128, 128, 128, 0.1);
 	border-radius: 8px;
 	padding: 10px 14px;
-	border: 1px solid rgba(255, 255, 255, 0.1);
-	color: white;
+	border: 1px solid rgba(128, 128, 128, 0.2);
 	font-size: 1.1em;
 }
 
 .chat-input:focus {
-	border-color: #3484f0;
+	border-color: rgba(52, 132, 240, 0.8);
 }
 
 .terminal-box {
 	margin-top: 10px;
-	background-color: rgba(0, 0, 0, 0.5);
+	background-color: rgba(0, 0, 0, 0.4);
 	border-radius: 6px;
 	padding: 12px;
-	border-left: 3px solid #3484f0;
+	border-left: 3px solid rgba(52, 132, 240, 0.8);
 }
 
 .terminal-text {
 	font-family: "Monospace", monospace;
 	font-size: 1em;
-	color: #f8f8f2;
 }
 
 .settings-button {
 	padding: 6px;
 	border-radius: 8px;
 	margin-right: 8px;
-	background-color: rgba(255, 255, 255, 0.05);
+	background-color: rgba(128, 128, 128, 0.1);
 }
 
 .settings-button:hover {
-	background-color: rgba(255, 255, 255, 0.1);
+	background-color: rgba(128, 128, 128, 0.2);
 }
 
 .button {
 	padding: 4px 12px;
 	border-radius: 6px;
-	background-color: rgba(255, 255, 255, 0.1);
+	background-color: rgba(128, 128, 128, 0.15);
 }
 
 .button:hover {
-	background-color: rgba(255, 255, 255, 0.2);
+	background-color: rgba(128, 128, 128, 0.25);
 }
 
 .run-button {
 	margin-top: 10px;
-	background-color: #2ecc71;
-	color: white;
+	background-color: rgba(46, 204, 113, 0.85);
 	border-radius: 6px;
 	padding: 6px 12px;
 	font-weight: bold;
 }
 
 .run-button:hover {
-	background-color: #27ae60;
+	background-color: rgba(39, 174, 96, 0.9);
+}
+
+.cancel-button {
+	margin-left: 8px;
+	background-color: rgba(231, 76, 60, 0.7);
+	border-radius: 6px;
+	padding: 4px 10px;
+	font-size: 0.9em;
+}
+
+.cancel-button:hover {
+	background-color: rgba(192, 57, 43, 0.8);
 }

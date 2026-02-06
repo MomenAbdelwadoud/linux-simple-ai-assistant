@@ -1,7 +1,9 @@
 import Clutter from "gi://Clutter";
 import Gio from "gi://Gio";
 import GLib from "gi://GLib";
+import Meta from "gi://Meta";
 import Pango from "gi://Pango";
+import Shell from "gi://Shell";
 import St from "gi://St";
 
 import {Extension} from "resource:///org/gnome/shell/extensions/extension.js";
@@ -14,12 +16,16 @@ import * as History from "./history.js";
 import {SYSTEM_PROMPT} from "./prompts.js";
 import * as Utils from "./utils.js";
 
+const TIMEOUT_SECONDS = 60;
+
 export default class SimpleAiAssistantExtension extends Extension {
 	enable() {
 		try {
 			this._settings = this.getSettings();
 			this._api = new Api.ApiClient();
 			this._history = History.loadHistory() || [];
+			this._cancellable = null;
+			this._commandCancellable = null;
 
 			this._indicator = new PanelMenu.Button(0.0, "Simple AI Assistant", false);
 
@@ -38,7 +44,9 @@ export default class SimpleAiAssistantExtension extends Extension {
 					icon.style_class = "system-status-icon";
 					this._indicator.add_child(icon);
 				}
-			} catch (e) {}
+			} catch (e) {
+				console.warn(`Simple AI Assistant: Failed to load icon: ${e.message}`);
+			}
 
 			this._buildUi();
 			Main.panel.addToStatusArea("simple-ai-assistant", this._indicator);
@@ -54,20 +62,60 @@ export default class SimpleAiAssistantExtension extends Extension {
 				this._updateApiReminder(),
 			);
 			this._updateApiReminder();
+
+			// Register keyboard shortcut
+			this._shortcutId = this._settings.connect("changed::keyboard-shortcut", () =>
+				this._updateShortcut(),
+			);
+			this._updateShortcut();
 		} catch (e) {
 			console.error(`Simple AI Assistant: Enable Error: ${e.message}`);
 		}
 	}
 
 	disable() {
+		// Cancel any pending operations
+		if (this._cancellable) {
+			this._cancellable.cancel();
+			this._cancellable = null;
+		}
+		if (this._commandCancellable) {
+			this._commandCancellable.cancel();
+			this._commandCancellable = null;
+		}
+
+		// Remove keyboard shortcut
+		Main.wm.removeKeybinding("keyboard-shortcut");
+
 		if (this._heightId) this._settings.disconnect(this._heightId);
 		if (this._widthId) this._settings.disconnect(this._widthId);
 		if (this._providerId) this._settings.disconnect(this._providerId);
+		if (this._shortcutId) this._settings.disconnect(this._shortcutId);
 		if (this._indicator) this._indicator.destroy();
 		this._indicator = null;
 		this._settings = null;
 		this._api = null;
 		this._chatContainer = null;
+	}
+
+	_updateShortcut() {
+		// Remove existing binding
+		Main.wm.removeKeybinding("keyboard-shortcut");
+
+		const shortcut = this._settings.get_strv("keyboard-shortcut");
+		if (shortcut && shortcut.length > 0 && shortcut[0]) {
+			Main.wm.addKeybinding(
+				"keyboard-shortcut",
+				this._settings,
+				Meta.KeyBindingFlags.NONE,
+				Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW,
+				() => {
+					if (this._indicator) {
+						this._indicator.menu.toggle();
+					}
+				},
+			);
+		}
 	}
 
 	_updateSize() {
@@ -186,7 +234,7 @@ export default class SimpleAiAssistantExtension extends Extension {
 
 		const examples = [
 			"My bluetooth doesn't turn on",
-			"Check why my system resource usage is high",
+			"Check why my system's resource usage is high",
 			"How to take a screenshot in GNOME?",
 		];
 
@@ -257,24 +305,75 @@ export default class SimpleAiAssistantExtension extends Extension {
 				return;
 			}
 
-			const loadingId = this._addMessageToUi("assistant", "Thinking...");
-			const response = await this._api.sendMessage(
-				provider,
-				apiKey,
-				model,
-				this._history,
-			);
-			if (loadingId) this._chatBox.remove_child(loadingId);
+			// Create loading message with cancel button
+			const loadingBox = new St.BoxLayout({
+				vertical: false,
+				style_class: "message-box assistant-message",
+			});
+			const loadingLabel = new St.Label({
+				text: "Thinking...",
+				style_class: "message-text",
+			});
+			loadingBox.add_child(loadingLabel);
 
-			this._history.push({role: "assistant", content: response});
-			this._addMessageToUi("assistant", response);
-			History.saveHistory(this._history, this._settings.get_int("history-limit"));
+			const cancelBtn = new St.Button({
+				label: "Cancel",
+				style_class: "cancel-button",
+			});
+			this._cancellable = new Gio.Cancellable();
+			cancelBtn.connect("clicked", () => {
+				if (this._cancellable) {
+					this._cancellable.cancel();
+				}
+			});
+			loadingBox.add_child(cancelBtn);
+			this._chatBox.add_child(loadingBox);
+			this._scrollToBottom();
+
+			try {
+				const response = await this._api.sendMessage(
+					provider,
+					apiKey,
+					model,
+					this._history,
+					this._cancellable,
+				);
+
+				this._chatBox.remove_child(loadingBox);
+				this._cancellable = null;
+
+				this._history.push({role: "assistant", content: response});
+				this._addMessageToUi("assistant", response);
+				History.saveHistory(
+					this._history,
+					this._settings.get_int("history-limit"),
+				);
+			} catch (e) {
+				this._chatBox.remove_child(loadingBox);
+				this._cancellable = null;
+
+				if (e.matches && e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {
+					this._addMessageToUi("assistant", "<i>Request cancelled.</i>");
+				} else {
+					this._addMessageToUi("assistant", `Error: ${e.message}`);
+				}
+			}
 		} catch (e) {
 			this._addMessageToUi("assistant", `Error: ${e.message}`);
 		}
 	}
 
 	_newChat() {
+		// Cancel any pending operations
+		if (this._cancellable) {
+			this._cancellable.cancel();
+			this._cancellable = null;
+		}
+		if (this._commandCancellable) {
+			this._commandCancellable.cancel();
+			this._commandCancellable = null;
+		}
+
 		this._history = [];
 		History.clearHistory();
 		this._chatBox.destroy_all_children();
@@ -291,6 +390,30 @@ export default class SimpleAiAssistantExtension extends Extension {
 		const msgBox = new St.BoxLayout();
 		msgBox.vertical = true;
 		msgBox.style_class = `message-box ${role}-message`;
+
+		// Header with copy button
+		const headerBox = new St.BoxLayout({style_class: "message-header"});
+		headerBox.x_expand = true;
+
+		const spacer = new St.Widget({x_expand: true});
+		headerBox.add_child(spacer);
+
+		const copyBtn = new St.Button({style_class: "copy-button"});
+		const copyIcon = new St.Icon({icon_name: "edit-copy-symbolic", icon_size: 14});
+		copyBtn.set_child(copyIcon);
+		copyBtn.connect("clicked", () => {
+			// Copy plain text content to clipboard
+			const clipboard = St.Clipboard.get_default();
+			clipboard.set_text(St.ClipboardType.CLIPBOARD, content);
+			// Visual feedback
+			copyIcon.icon_name = "emblem-ok-symbolic";
+			GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1500, () => {
+				copyIcon.icon_name = "edit-copy-symbolic";
+				return false;
+			});
+		});
+		headerBox.add_child(copyBtn);
+		msgBox.add_child(headerBox);
 
 		const label = new St.Label();
 		label.style_class = "message-text";
@@ -317,46 +440,112 @@ export default class SimpleAiAssistantExtension extends Extension {
 		}
 
 		this._chatBox.add_child(msgBox);
+		this._scrollToBottom();
+		return msgBox;
+	}
 
+	_scrollToBottom() {
 		GLib.idle_add(GLib.PRIORITY_LOW, () => {
 			if (this._chatScroll) {
-				const adj = this._chatScroll.vscroll.adjustment;
+				const adj = this._chatScroll.vadjustment;
 				adj.value = adj.upper - adj.page_size;
 			}
 			return false;
 		});
-		return msgBox;
 	}
 
 	async _runCommand(cmd, msgBox) {
 		const box = new St.BoxLayout();
 		box.vertical = true;
 		box.style_class = "terminal-box";
-		const label = new St.Label({text: "Executing...", style_class: "terminal-text"});
-		box.add_child(label);
+
+		const headerBox = new St.BoxLayout();
+		const label = new St.Label({
+			text: "Executing...",
+			style_class: "terminal-text",
+			x_expand: true,
+		});
+		headerBox.add_child(label);
+
+		// Cancel button for command execution
+		const cancelBtn = new St.Button({label: "Cancel", style_class: "cancel-button"});
+		this._commandCancellable = new Gio.Cancellable();
+		let commandPid = null;
+
+		cancelBtn.connect("clicked", () => {
+			if (this._commandCancellable) {
+				this._commandCancellable.cancel();
+			}
+			if (commandPid) {
+				try {
+					GLib.spawn_command_line_async(`kill ${commandPid}`);
+				} catch (e) {
+					// Ignore kill errors
+				}
+			}
+			label.text = "Cancelled";
+		});
+		headerBox.add_child(cancelBtn);
+		box.add_child(headerBox);
 		msgBox.add_child(box);
 
 		try {
-			const [res, stdout, stderr] = await this._spawnCommandLineAsync(cmd);
+			// Check if command requires sudo - wrap in gnome-terminal for password prompt
+			let actualCmd = cmd;
+			if (cmd.trim().startsWith("sudo ")) {
+				// Use gnome-terminal for sudo commands so password prompt works
+				actualCmd = `gnome-terminal -- bash -c '${cmd.replace(/'/g, "'\\''")}; echo ""; echo "Press Enter to close..."; read'`;
+				label.text = "Opening terminal for sudo command...";
+				GLib.spawn_command_line_async(actualCmd);
+
+				// For sudo commands opened in terminal, we don't get output back
+				// So we just note that we opened it
+				GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2000, () => {
+					label.text = "Command opened in terminal (check the terminal window)";
+					cancelBtn.hide();
+					return false;
+				});
+				return;
+			}
+
+			const [res, stdout, stderr] = await this._spawnCommandLineAsyncWithTimeout(
+				actualCmd,
+				TIMEOUT_SECONDS,
+			);
+			cancelBtn.hide();
+
 			const decoder = new TextDecoder("utf-8");
 			const out = decoder.decode(new Uint8Array(stdout.get_data())).trim();
 			const err = decoder.decode(new Uint8Array(stderr.get_data())).trim();
 			const result = out || err || "Done (no output)";
-			label.text = result.split("\n").slice(-3).join("\n");
+			label.text = result.split("\n").slice(-5).join("\n");
 			this._history.push({
 				role: "user",
 				content: `COMMAND OUTPUT for "${cmd}":\n${result}`,
 			});
 			await this._getAiResponse();
 		} catch (e) {
-			const errorMsg = `COMMAND ERROR for "${cmd}":\n${e.message}`;
-			label.text = `Error: ${e.message}`;
-			this._history.push({role: "user", content: errorMsg});
+			cancelBtn.hide();
+			if (e.message === "Command timed out") {
+				label.text = `Timeout: Command exceeded ${TIMEOUT_SECONDS}s limit`;
+				this._history.push({
+					role: "user",
+					content: `COMMAND TIMEOUT for "${cmd}": Exceeded ${TIMEOUT_SECONDS} seconds`,
+				});
+			} else if (e.message === "Cancelled") {
+				label.text = "Command cancelled";
+			} else {
+				const errorMsg = `COMMAND ERROR for "${cmd}":\n${e.message}`;
+				label.text = `Error: ${e.message}`;
+				this._history.push({role: "user", content: errorMsg});
+			}
 			await this._getAiResponse();
+		} finally {
+			this._commandCancellable = null;
 		}
 	}
 
-	_spawnCommandLineAsync(cmd) {
+	_spawnCommandLineAsyncWithTimeout(cmd, timeoutSeconds) {
 		return new Promise((resolve, reject) => {
 			try {
 				const [success, argv] = GLib.shell_parse_argv(cmd);
@@ -364,15 +553,43 @@ export default class SimpleAiAssistantExtension extends Extension {
 					null,
 					argv,
 					null,
-					GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+					GLib.SpawnFlags.SEARCH_PATH,
 					null,
 				);
+
 				const os = new Gio.DataInputStream({
 					base_stream: new Gio.UnixInputStream({fd: stdout, close_fd: true}),
 				});
 				const es = new Gio.DataInputStream({
 					base_stream: new Gio.UnixInputStream({fd: stderr, close_fd: true}),
 				});
+
+				let timedOut = false;
+				let completed = false;
+
+				// Set up timeout
+				const timeoutId = GLib.timeout_add_seconds(
+					GLib.PRIORITY_DEFAULT,
+					timeoutSeconds,
+					() => {
+						if (!completed) {
+							timedOut = true;
+							try {
+								GLib.spawn_command_line_async(`kill ${pid}`);
+							} catch (e) {
+								// Ignore
+							}
+						}
+						return false;
+					},
+				);
+
+				// Add child watch to reap the process
+				GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, () => {
+					completed = true;
+					GLib.Source.remove(timeoutId);
+				});
+
 				const ob = [],
 					eb = [];
 				const read = (s, d) =>
@@ -391,7 +608,13 @@ export default class SimpleAiAssistantExtension extends Extension {
 							});
 						f();
 					});
+
 				Promise.all([read(os, ob), read(es, eb)]).then(() => {
+					if (timedOut) {
+						reject(new Error("Command timed out"));
+						return;
+					}
+
 					const merge = bufs => {
 						const total = bufs.reduce((a, b) => a + b.length + 1, 0);
 						const u = new Uint8Array(total);

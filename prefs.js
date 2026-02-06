@@ -7,6 +7,9 @@ import {
 	gettext as _,
 } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
+// Reverting Vault usage due to libsecret timeouts in user environment
+// import * as Vault from "./vault.js";
+
 export default class SimpleAiAssistantPreferences extends ExtensionPreferences {
 	fillPreferencesWindow(window) {
 		const settings = this.getSettings();
@@ -20,50 +23,96 @@ export default class SimpleAiAssistantPreferences extends ExtensionPreferences {
 		const providerRow = new Adw.ComboRow({
 			title: _("API Provider"),
 			model: new Gtk.StringList({
-				strings: ["OpenAI", "Gemini"],
+				strings: ["OpenAI", "Gemini", "Claude"],
 			}),
 		});
 		apiGroup.add(providerRow);
-		providerRow.connect("notify::selected", () => {
-			const val = providerRow.selected === 0 ? "openai" : "gemini";
-			settings.set_string("api-provider", val);
-		});
-		providerRow.selected = settings.get_string("api-provider") === "openai" ? 0 : 1;
 
+		// Define all rows
 		const geminiKeyRow = new Adw.PasswordEntryRow({title: _("Gemini API Key")});
+		const geminiModelRow = new Adw.EntryRow({title: _("Gemini Model")});
+		const openaiKeyRow = new Adw.PasswordEntryRow({title: _("OpenAI API Key")});
+		const openaiModelRow = new Adw.EntryRow({title: _("OpenAI Model")});
+		const claudeKeyRow = new Adw.PasswordEntryRow({title: _("Claude API Key")});
+		const claudeModelRow = new Adw.EntryRow({title: _("Claude Model")});
+
 		apiGroup.add(geminiKeyRow);
+		apiGroup.add(geminiModelRow);
+		apiGroup.add(openaiKeyRow);
+		apiGroup.add(openaiModelRow);
+		apiGroup.add(claudeKeyRow);
+		apiGroup.add(claudeModelRow);
+
+		// Bind settings directly to GSettings (Revert from Vault)
 		settings.bind(
 			"gemini-api-key",
 			geminiKeyRow,
 			"text",
 			Gio.SettingsBindFlags.DEFAULT,
 		);
-
-		const geminiModelRow = new Adw.EntryRow({title: _("Gemini Model")});
-		apiGroup.add(geminiModelRow);
 		settings.bind(
 			"gemini-model",
 			geminiModelRow,
 			"text",
 			Gio.SettingsBindFlags.DEFAULT,
 		);
-
-		const openaiKeyRow = new Adw.PasswordEntryRow({title: _("OpenAI API Key")});
-		apiGroup.add(openaiKeyRow);
 		settings.bind(
 			"openai-api-key",
 			openaiKeyRow,
 			"text",
 			Gio.SettingsBindFlags.DEFAULT,
 		);
-
-		const openaiModelRow = new Adw.EntryRow({title: _("OpenAI Model")});
-		apiGroup.add(openaiModelRow);
 		settings.bind(
 			"openai-model",
 			openaiModelRow,
 			"text",
 			Gio.SettingsBindFlags.DEFAULT,
+		);
+		settings.bind(
+			"claude-api-key",
+			claudeKeyRow,
+			"text",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+		settings.bind(
+			"claude-model",
+			claudeModelRow,
+			"text",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+
+		const providerMap = ["openai", "gemini", "claude"];
+
+		// Set initial value BEFORE connecting signal to avoid triggering it
+		const currentProvider = settings.get_string("api-provider");
+		let initialIndex = providerMap.indexOf(currentProvider);
+		if (initialIndex === -1) initialIndex = 1; // Default to Gemini
+		providerRow.selected = initialIndex;
+
+		// Now connect the signal after initial value is set
+		providerRow.connect("notify::selected", () => {
+			const val = providerMap[providerRow.selected] || "gemini";
+			settings.set_string("api-provider", val);
+			this._updateKeyVisibility(
+				settings,
+				geminiKeyRow,
+				geminiModelRow,
+				openaiKeyRow,
+				openaiModelRow,
+				claudeKeyRow,
+				claudeModelRow,
+			);
+		});
+
+		// Initial visibility update
+		this._updateKeyVisibility(
+			settings,
+			geminiKeyRow,
+			geminiModelRow,
+			openaiKeyRow,
+			openaiModelRow,
+			claudeKeyRow,
+			claudeModelRow,
 		);
 
 		// 2. Appearance Group
@@ -108,7 +157,47 @@ export default class SimpleAiAssistantPreferences extends ExtensionPreferences {
 		heightRow.add_suffix(heightSpin);
 		appearanceGroup.add(heightRow);
 
-		// 3. General Settings Group
+		// 3. Keyboard Shortcut Group
+		const shortcutGroup = new Adw.PreferencesGroup({title: _("Keyboard Shortcut")});
+		page.add(shortcutGroup);
+
+		const shortcutRow = new Adw.ActionRow({
+			title: _("Open Assistant"),
+			subtitle: _("Press keys to set shortcut, or leave empty to disable"),
+		});
+
+		const shortcutLabel = new Gtk.ShortcutLabel({
+			accelerator: this._getShortcutString(settings),
+			valign: Gtk.Align.CENTER,
+		});
+
+		const shortcutBtn = new Gtk.Button({
+			label: "Set",
+			valign: Gtk.Align.CENTER,
+			margin_start: 8,
+		});
+
+		const clearBtn = new Gtk.Button({
+			label: "Clear",
+			valign: Gtk.Align.CENTER,
+			margin_start: 4,
+		});
+
+		shortcutBtn.connect("clicked", () => {
+			this._showShortcutDialog(window, settings, shortcutLabel);
+		});
+
+		clearBtn.connect("clicked", () => {
+			settings.set_strv("keyboard-shortcut", []);
+			shortcutLabel.accelerator = "";
+		});
+
+		shortcutRow.add_suffix(shortcutLabel);
+		shortcutRow.add_suffix(shortcutBtn);
+		shortcutRow.add_suffix(clearBtn);
+		shortcutGroup.add(shortcutRow);
+
+		// 4. General Settings Group
 		const generalGroup = new Adw.PreferencesGroup({title: _("General Settings")});
 		page.add(generalGroup);
 
@@ -145,7 +234,7 @@ export default class SimpleAiAssistantPreferences extends ExtensionPreferences {
 			Gio.SettingsBindFlags.DEFAULT,
 		);
 
-		// 4. Information Group
+		// 5. Information Group
 		const infoGroup = new Adw.PreferencesGroup({title: _("Information")});
 		page.add(infoGroup);
 
@@ -156,7 +245,7 @@ export default class SimpleAiAssistantPreferences extends ExtensionPreferences {
 			),
 		});
 		const privacyIcon = new Gtk.Image({
-			icon_name: "dialog-warning-symbolic",
+			icon_name: "security-high-symbolic",
 		});
 		privacyRow.add_prefix(privacyIcon);
 		infoGroup.add(privacyRow);
@@ -174,5 +263,84 @@ export default class SimpleAiAssistantPreferences extends ExtensionPreferences {
 			GLib.spawn_command_line_async("xdg-open https://momen.codes");
 		});
 		infoGroup.add(creditsRow);
+	}
+
+	_updateKeyVisibility(
+		settings,
+		geminiKeyRow,
+		geminiModelRow,
+		openaiKeyRow,
+		openaiModelRow,
+		claudeKeyRow,
+		claudeModelRow,
+	) {
+		const provider = settings.get_string("api-provider");
+		geminiKeyRow.visible = provider === "gemini";
+		geminiModelRow.visible = provider === "gemini";
+		openaiKeyRow.visible = provider === "openai";
+		openaiModelRow.visible = provider === "openai";
+		claudeKeyRow.visible = provider === "claude";
+		claudeModelRow.visible = provider === "claude";
+	}
+
+	_getShortcutString(settings) {
+		const shortcuts = settings.get_strv("keyboard-shortcut");
+		return shortcuts.length > 0 ? shortcuts[0] : "";
+	}
+
+	_showShortcutDialog(window, settings, shortcutLabel) {
+		const dialog = new Gtk.Dialog({
+			title: "Set Keyboard Shortcut",
+			transient_for: window,
+			modal: true,
+			default_width: 400,
+			default_height: 150,
+		});
+
+		const contentArea = dialog.get_content_area();
+		contentArea.spacing = 12;
+		contentArea.margin_top = 20;
+		contentArea.margin_bottom = 20;
+		contentArea.margin_start = 20;
+		contentArea.margin_end = 20;
+
+		const label = new Gtk.Label({
+			label: "Press a key combination...",
+			halign: Gtk.Align.CENTER,
+		});
+		contentArea.append(label);
+
+		const keyController = new Gtk.EventControllerKey();
+		dialog.add_controller(keyController);
+
+		keyController.connect("key-pressed", (controller, keyval, keycode, state) => {
+			// Ignore modifier-only presses
+			if (
+				keyval === 65505 ||
+				keyval === 65506 ||
+				keyval === 65507 ||
+				keyval === 65508 ||
+				keyval === 65513 ||
+				keyval === 65514 ||
+				keyval === 65515 ||
+				keyval === 65516
+			) {
+				return false;
+			}
+
+			// Get clean modifier state (remove lock modifiers)
+			const mask = state & Gtk.accelerator_get_default_mod_mask();
+			const accelerator = Gtk.accelerator_name(keyval, mask);
+
+			if (accelerator) {
+				settings.set_strv("keyboard-shortcut", [accelerator]);
+				shortcutLabel.accelerator = accelerator;
+				dialog.close();
+			}
+
+			return true;
+		});
+
+		dialog.present();
 	}
 }

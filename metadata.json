@@ -1,8 +1,8 @@
 {
 	"uuid": "simple-ai-assistant@momen.codes",
 	"name": "Simple AI Assistant",
-	"description": "A light-weight, private agentic AI assistant with terminal command support. No data is collected by the extension.",
-	"shell-version": ["43", "44", "45", "46", "47"],
+	"description": "A simple light-weight, agentic AI assistant with terminal command support and local system context. Supports OpenAI, Google Gemini, and Anthropic Claude. No data is sent to anyone but your chosen AI provider.",
+	"shell-version": ["45", "46", "47", "48"],
 	"url": "https://github.com/momen/simple-ai-assistant",
 	"gettext-domain": "simple-ai-assistant",
 	"settings-schema": "org.gnome.shell.extensions.simple-ai-assistant"

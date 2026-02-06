@@ -5,7 +5,7 @@ A light-weight, private agentic AI assistant for GNOME Shell. Get things done wi
 ## 🌟 Features
 
 - **Agentic Loop**: AI can propose commands, see output, and continue the task.
-- **Privacy Focus**: **No data is collected.** Your API keys and chat history are stored locally on your machine.
+- **Secure & Private**: API keys are **encrypted** in the GNOME Keyring. No data is sent to anyone but your chosen AI provider.
 - **System Awareness**: Optionally share system details (CPU, GPU, RAM, OS) for better technical assistance.
 - **Theme Support**: Automatically matches your system theme (Light/Dark).
 - **History Management**: Local history storage with configurable message limits.
@@ -13,7 +13,7 @@ A light-weight, private agentic AI assistant for GNOME Shell. Get things done wi
 ## 🛠 Prerequisites
 
 - GNOME Shell 45+
-- API Key for OpenAI or Google Gemini
+- API Key for OpenAI, Google Gemini, or Anthropic Claude
 
 ## 🚀 Installation
 
@@ -31,11 +31,11 @@ A light-weight, private agentic AI assistant for GNOME Shell. Get things done wi
 
 ## 📝 Privacy Disclosure
 
-**Simple AI Assistant** is designed with privacy in mind:
+**Simple AI Assistant** is designed with privacy and security in mind:
 
-- All data stays on your machine.
-- Your history is stored in `~/.cache/simple-ai-assistant/`.
-- No telemetry or tracking is included.
+- **API Keys**: Stored in your system's secure **GNOME Keyring (libsecret)**.
+- **Data**: All data stays on your machine. Chat history is stored locally in `~/.cache/simple-ai-assistant/`.
+- **Telemetry**: No tracking or analytics code is included.
 
 ## 👨‍💻 Credits
 
