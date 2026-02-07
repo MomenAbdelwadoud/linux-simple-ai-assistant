@@ -10,6 +10,14 @@ A light-weight, private agentic AI assistant for GNOME Shell. Get things done wi
 - **Theme Support**: Automatically matches your system theme (Light/Dark).
 - **History Management**: Local history storage with configurable message limits.
 
+## 📸 Screenshots
+
+![New Chat](demo/screenshot-new-chat.png)
+_New Chat interface with AI provider selection_
+
+![Command Execution](demo/screenshot-running.png)
+_Agentic command execution with terminal output_
+
 ## 🛠 Prerequisites
 
 - GNOME Shell 45+
