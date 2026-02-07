@@ -50,3 +50,7 @@ _Agentic command execution with terminal output_
 ## 👨‍💻 Credits
 
 Developed by **Momen Elkhalifa** ([momen.codes](https://momen.codes)).
+
+## 📜 License
+
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
