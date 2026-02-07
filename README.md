@@ -2,6 +2,8 @@
 
 A light-weight, private agentic AI assistant for GNOME Shell. Get things done with terminal command support and local system context.
 
+**Source Code**: [GitHub](https://github.com/MomenAbdelwadoud/linux-simple-ai-assistant)
+
 ## 🌟 Features
 
 - **Agentic Loop**: AI can propose commands, see output, and continue the task.
