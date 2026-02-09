@@ -7,7 +7,8 @@ A light-weight, private agentic AI assistant for GNOME Shell. Get things done wi
 ## 🌟 Features
 
 - **Agentic Loop**: AI can propose commands, see output, and continue the task.
-- **Secure & Private**: API keys are **encrypted** in the GNOME Keyring. No data is sent to anyone but your chosen AI provider.
+- **Secure & Private**: API keys are stored locally in GSettings. No data is sent to anyone but your chosen AI provider.
+- **Sudo Support**: Execute privileged commands safely via `pkexec` with native system password prompts and output capture.
 - **System Awareness**: Optionally share system details (CPU, GPU, RAM, OS) for better technical assistance.
 - **Theme Support**: Automatically matches your system theme (Light/Dark).
 - **History Management**: Local history storage with configurable message limits.
@@ -39,11 +40,10 @@ _Agentic command execution with terminal output_
 4. Restart GNOME Shell (Alt+F2 + `r` on X11, or Log out/Log in on Wayland).
 5. Enable the extension using GNOME Extensions app.
 
-## 📝 Privacy Disclosure
+## 📝 Privacy Notes
 
-**Simple AI Assistant** is designed with privacy and security in mind:
-
-- **API Keys**: Stored in your system's secure **GNOME Keyring (libsecret)**.
+- **API Keys**: Stored locally in your system's GSettings (dconf).
+- **Sudo Commands**: Privileged commands use `pkexec`, ensuring the extension never sees your password while still capturing command output correctly.
 - **Data**: All data stays on your machine. Chat history is stored locally in `~/.cache/simple-ai-assistant/`.
 - **Telemetry**: No tracking or analytics code is included.
 

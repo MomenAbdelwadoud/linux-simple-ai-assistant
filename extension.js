@@ -209,8 +209,8 @@ export default class SimpleAiAssistantExtension extends Extension {
 
 		const inputArea = new St.BoxLayout({
 			style_class: "chat-input-area",
-			spacing: 8,
 		});
+		inputArea.style = "spacing: 8px;";
 
 		this._input = new St.Entry();
 		this._input.style_class = "chat-input";
@@ -257,6 +257,11 @@ export default class SimpleAiAssistantExtension extends Extension {
 		}
 
 		this._indicator.menu.box.add_child(this._chatContainer);
+
+		// Autofocus when menu opens
+		this._indicator.menu.connect("opened", () => {
+			this._input.grab_key_focus();
+		});
 	}
 
 	_showEmptyState() {
@@ -268,8 +273,8 @@ export default class SimpleAiAssistantExtension extends Extension {
 			x_expand: true,
 			y_expand: true,
 			y_align: Clutter.ActorAlign.CENTER,
-			spacing: 15,
 		});
+		this._emptyState.style = "spacing: 15px;";
 
 		const title = new St.Label({
 			text: "What can I help with today?",
@@ -451,17 +456,23 @@ export default class SimpleAiAssistantExtension extends Extension {
 			role === "user" ? "user-msg-container" : "assistant-msg-container";
 
 		// The bubble itself (visual container)
-		// We use a BinLayout to overlay the Text and the Copy Button
 		const bubbleWidget = new St.Widget({
 			layout_manager: new Clutter.BinLayout(),
-			x_expand: true,
+			x_expand: false,
+			y_expand: false,
+			x_align: role === "user" ? Clutter.ActorAlign.END : Clutter.ActorAlign.START,
 		});
 		// Apply style class to the bubble widget
 		bubbleWidget.style_class = role === "user" ? "user-bubble" : "assistant-bubble";
 
 		// 1. Message Text
-		const label = new St.Label();
-		label.style_class = "message-text";
+		const label = new St.Label({
+			style_class: "message-text",
+			x_expand: true,
+			y_expand: false,
+			x_align: Clutter.ActorAlign.FILL,
+			y_align: Clutter.ActorAlign.START,
+		});
 		try {
 			label.clutter_text.set_markup(Utils.formatMessage(content));
 		} catch (e) {
@@ -469,19 +480,16 @@ export default class SimpleAiAssistantExtension extends Extension {
 		}
 		label.clutter_text.line_wrap = true;
 		label.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
-		// Ensure text expands to fill bubble, but leaves space on right via CSS padding
-		label.x_expand = true;
-		label.y_expand = true;
 
 		bubbleWidget.add_child(label);
 
-		// 2. Copy Button (Overlay - Top Right/Center)
+		// 2. Copy Button (Overlay - Top Right)
 		const copyBtn = new St.Button({
 			style_class: "copy-button",
 			x_align: Clutter.ActorAlign.END,
-			y_align: Clutter.ActorAlign.CENTER,
-			x_expand: true,
-			y_expand: true,
+			y_align: Clutter.ActorAlign.START,
+			x_expand: false,
+			y_expand: false,
 		});
 		const copyIcon = new St.Icon({icon_name: "edit-copy-symbolic", icon_size: 14});
 		copyBtn.set_child(copyIcon);
@@ -576,22 +584,12 @@ export default class SimpleAiAssistantExtension extends Extension {
 		msgBox.add_child(box);
 
 		try {
-			// Check if command requires sudo - wrap in gnome-terminal for password prompt
+			// Check if command requires sudo - use pkexec for native password dialog and output capture
 			let actualCmd = cmd;
 			if (cmd.trim().startsWith("sudo ")) {
-				// Use gnome-terminal for sudo commands so password prompt works
-				actualCmd = `gnome-terminal -- bash -c '${cmd.replace(/'/g, "'\\''")}; echo ""; echo "Press Enter to close..."; read'`;
-				label.text = "Opening terminal for sudo command...";
-				GLib.spawn_command_line_async(actualCmd);
-
-				// For sudo commands opened in terminal, we don't get output back
-				// So we just note that we opened it
-				GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2000, () => {
-					label.text = "Command opened in terminal (check the terminal window)";
-					cancelBtn.hide();
-					return false;
-				});
-				return;
+				const innerCmd = cmd.trim().substring(5);
+				actualCmd = `pkexec bash -c '${innerCmd.replace(/'/g, "'\\''")}'`;
+				label.text = "Authentication required...";
 			}
 
 			const [res, stdout, stderr] = await this._spawnCommandLineAsyncWithTimeout(

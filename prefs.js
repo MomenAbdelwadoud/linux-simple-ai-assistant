@@ -7,9 +7,6 @@ import {
 	gettext as _,
 } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
-// Reverting Vault usage due to libsecret timeouts in user environment
-// import * as Vault from "./vault.js";
-
 export default class SimpleAiAssistantPreferences extends ExtensionPreferences {
 	fillPreferencesWindow(window) {
 		const settings = this.getSettings();
@@ -43,7 +40,6 @@ export default class SimpleAiAssistantPreferences extends ExtensionPreferences {
 		apiGroup.add(claudeKeyRow);
 		apiGroup.add(claudeModelRow);
 
-		// Bind settings directly to GSettings (Revert from Vault)
 		settings.bind(
 			"gemini-api-key",
 			geminiKeyRow,

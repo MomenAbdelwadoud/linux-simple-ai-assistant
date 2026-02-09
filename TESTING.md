@@ -40,8 +40,9 @@ To test your extension without restarting your main desktop session, you can use
     ```
     Or look at the terminal where you ran the nested shell.
 
-## Security Review
+## Security Notes
 
 - **Command Execution**: The extension uses `GLib.spawn_async_with_pipes` to run commands. It only runs commands when the **user explicitly clicks the "Run Command" button**.
-- **API Keys**: Keys are stored in GSettings. They are not encrypted by default but are stored in your user profile. Avoid sharing your `history.json` or settings exports if they contain secrets.
-- **History**: History is stored in `~/.cache/simple-ai-assistant/history.json`. It is truncated to 20 messages by default to prevent large files.
+    - **Sudo Support**: Commands starting with `sudo` are automatically wrapped in `pkexec`. This triggers a native GNOME password dialog, ensuring your password stays within the system's secure layers while allowing the extension to capture the command output.
+- **API Keys**: Keys are stored locally in your system's GSettings (dconf) and are protected by standard Linux file permissions within your home directory.
+- **History**: History is stored in `~/.cache/simple-ai-assistant/history.json`. It is truncated to the limit set in preferences (default 20) to prevent large files.
