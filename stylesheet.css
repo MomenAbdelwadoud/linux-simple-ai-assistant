@@ -21,20 +21,43 @@
 }
 
 .message-box {
-	padding: 8px 12px;
-	border-radius: 10px;
+	background-color: transparent;
+	padding: 0;
+	border-radius: 0;
+}
+
+/* User Message: Bubble style, right aligned */
+.user-msg-container {
 	max-width: 90%;
 }
 
-.message-header {
-	margin-bottom: 4px;
+.user-bubble {
+	padding: 8px 12px;
+	border-radius: 12px;
+	background-color: rgba(52, 132, 240, 0.8);
+	color: white;
 }
+
+/* Assistant Message: No bubble, full width */
+.assistant-msg-container {
+	width: 100%;
+}
+
+.assistant-bubble {
+	padding: 4px 0;
+	background-color: transparent;
+	color: white;
+}
+
+/* Copy Button Overlay */
+/* Message overlay styling */
 
 .copy-button {
 	padding: 4px;
 	border-radius: 4px;
 	background-color: transparent;
-	opacity: 0.6;
+	opacity: 0.3;
+	margin-right: 4px;
 }
 
 .copy-button:hover {
@@ -42,20 +65,13 @@
 	background-color: rgba(128, 128, 128, 0.2);
 }
 
-.user-message {
-	background-color: rgba(52, 132, 240, 0.8);
-	align-self: flex-end;
-}
-
-.assistant-message {
-	background-color: rgba(128, 128, 128, 0.15);
-	align-self: flex-start;
+.message-text {
+	padding-right: 36px; /* Increased space for the copy button */
 }
 
 /* Empty State Styling */
 .empty-state {
 	padding: 20px;
-	spacing: 15px;
 }
 
 .empty-state-title {
@@ -95,6 +111,8 @@
 	text-align: center;
 }
 
+/* Marker for input area */
+
 .chat-input {
 	background-color: rgba(128, 128, 128, 0.1);
 	border-radius: 8px;
@@ -105,6 +123,22 @@
 
 .chat-input:focus {
 	border-color: rgba(52, 132, 240, 0.8);
+}
+
+.send-button {
+	padding: 0 12px;
+	border-radius: 8px;
+	background-color: rgba(52, 132, 240, 0.8);
+	color: white;
+}
+
+.send-button:hover {
+	background-color: rgba(52, 132, 240, 0.9);
+}
+
+.send-button:disabled {
+	background-color: rgba(128, 128, 128, 0.1);
+	color: rgba(255, 255, 255, 0.3);
 }
 
 .terminal-box {
@@ -131,36 +165,26 @@
 	background-color: rgba(128, 128, 128, 0.2);
 }
 
-.button {
-	padding: 4px 12px;
+/* Generalized Button Style (Action Buttons) */
+.button,
+.run-button,
+.cancel-button {
+	padding: 6px 16px;
 	border-radius: 6px;
 	background-color: rgba(128, 128, 128, 0.15);
-}
-
-.button:hover {
-	background-color: rgba(128, 128, 128, 0.25);
+	margin-top: 5px;
 }
 
 .run-button {
-	margin-top: 10px;
-	background-color: rgba(46, 204, 113, 0.85);
-	border-radius: 6px;
-	padding: 6px 12px;
+	margin-top: 12px;
+	padding: 8px 24px;
 	font-weight: bold;
 }
 
-.run-button:hover {
-	background-color: rgba(39, 174, 96, 0.9);
-}
-
-.cancel-button {
-	margin-left: 8px;
-	background-color: rgba(231, 76, 60, 0.7);
-	border-radius: 6px;
-	padding: 4px 10px;
-	font-size: 0.9em;
-}
-
+.button:hover,
+.run-button:hover,
 .cancel-button:hover {
-	background-color: rgba(192, 57, 43, 0.8);
+	background-color: rgba(128, 128, 128, 0.25);
 }
+
+/* Marker for consistency */

@@ -5,6 +5,10 @@ export function formatMessage(text) {
 	// Markdown-like bold
 	escaped = escaped.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
 
+	// Markdown-like italics
+	escaped = escaped.replace(/\*(.*?)\*/g, "<i>$1</i>");
+	escaped = escaped.replace(/_(.*?)_/g, "<i>$1</i>");
+
 	// Code blocks (triple backticks)
 	// We'll wrap them in a span with a specific font and background
 	escaped = escaped.replace(

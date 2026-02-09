@@ -207,14 +207,42 @@ export default class SimpleAiAssistantExtension extends Extension {
 		});
 		bottomArea.add_child(this._apiReminder);
 
-		const inputArea = new St.BoxLayout();
-		inputArea.style_class = "chat-input-area";
+		const inputArea = new St.BoxLayout({
+			style_class: "chat-input-area",
+			spacing: 8,
+		});
+
 		this._input = new St.Entry();
 		this._input.style_class = "chat-input";
 		this._input.hint_text = "Type a message...";
 		this._input.x_expand = true;
 		this._input.clutter_text.connect("activate", () => this._sendMessage());
+
+		// Send Button
+		this._sendBtn = new St.Button({
+			style_class: "send-button",
+			can_focus: true,
+			reactive: true, // starts enabled, but updated logic below
+		});
+		const sendIcon = new St.Icon({
+			icon_name: "go-next-symbolic", // Simple arrow right
+			icon_size: 16,
+		});
+		this._sendBtn.set_child(sendIcon);
+		this._sendBtn.connect("clicked", () => this._sendMessage());
+
+		// Monitor input to enable/disable send button
+		this._input.clutter_text.connect("notify::text", () => {
+			const text = this._input.get_text();
+			this._sendBtn.reactive = text && text.trim().length > 0;
+			this._sendBtn.opacity = this._sendBtn.reactive ? 255 : 128;
+		});
+		// Initial state
+		this._sendBtn.reactive = false;
+		this._sendBtn.opacity = 128;
+
 		inputArea.add_child(this._input);
+		inputArea.add_child(this._sendBtn);
 		bottomArea.add_child(inputArea);
 
 		this._chatContainer.add_child(bottomArea);
@@ -234,12 +262,14 @@ export default class SimpleAiAssistantExtension extends Extension {
 	_showEmptyState() {
 		this._chatBox.destroy_all_children();
 
-		this._emptyState = new St.BoxLayout();
-		this._emptyState.vertical = true;
-		this._emptyState.style_class = "empty-state";
-		this._emptyState.x_expand = true;
-		this._emptyState.y_expand = true;
-		this._emptyState.y_align = Clutter.ActorAlign.CENTER;
+		this._emptyState = new St.BoxLayout({
+			vertical: true,
+			style_class: "empty-state",
+			x_expand: true,
+			y_expand: true,
+			y_align: Clutter.ActorAlign.CENTER,
+			spacing: 15,
+		});
 
 		const title = new St.Label({
 			text: "What can I help with today?",
@@ -278,8 +308,12 @@ export default class SimpleAiAssistantExtension extends Extension {
 
 	async _sendMessage() {
 		const text = this._input.get_text();
-		if (!text) return;
+		if (!text || !text.trim()) return;
 		this._input.set_text("");
+
+		// Reset send button state
+		this._sendBtn.reactive = false;
+		this._sendBtn.opacity = 128;
 
 		if (this._emptyState) {
 			this._chatBox.remove_child(this._emptyState);
@@ -328,12 +362,15 @@ export default class SimpleAiAssistantExtension extends Extension {
 			const loadingLabel = new St.Label({
 				text: "Thinking...",
 				style_class: "message-text",
+				y_align: Clutter.ActorAlign.CENTER,
 			});
 			loadingBox.add_child(loadingLabel);
 
 			const cancelBtn = new St.Button({
 				label: "Cancel",
 				style_class: "cancel-button",
+				x_align: Clutter.ActorAlign.START,
+				y_align: Clutter.ActorAlign.CENTER,
 			});
 			this._cancellable = new Gio.Cancellable();
 			cancelBtn.connect("clicked", () => {
@@ -368,7 +405,7 @@ export default class SimpleAiAssistantExtension extends Extension {
 				this._cancellable = null;
 
 				if (e.matches && e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {
-					this._addMessageToUi("assistant", "<i>Request cancelled.</i>");
+					this._addMessageToUi("assistant", "_Request cancelled._");
 				} else {
 					this._addMessageToUi("assistant", `Error: ${e.message}`);
 				}
@@ -402,18 +439,50 @@ export default class SimpleAiAssistantExtension extends Extension {
 			this._emptyState = null;
 		}
 
-		const msgBox = new St.BoxLayout();
-		msgBox.vertical = true;
-		msgBox.style_class = `message-box ${role}-message`;
+		// Main container for the message row (handles alignment and width)
+		// For user: right aligned, max 90% width (handled by CSS + alignment)
+		// For assistant: full width
+		const msgRow = new St.BoxLayout({
+			vertical: true,
+			x_expand: true,
+			x_align: role === "user" ? Clutter.ActorAlign.END : Clutter.ActorAlign.FILL,
+		});
+		msgRow.style_class =
+			role === "user" ? "user-msg-container" : "assistant-msg-container";
 
-		// Header with copy button
-		const headerBox = new St.BoxLayout({style_class: "message-header"});
-		headerBox.x_expand = true;
+		// The bubble itself (visual container)
+		// We use a BinLayout to overlay the Text and the Copy Button
+		const bubbleWidget = new St.Widget({
+			layout_manager: new Clutter.BinLayout(),
+			x_expand: true,
+		});
+		// Apply style class to the bubble widget
+		bubbleWidget.style_class = role === "user" ? "user-bubble" : "assistant-bubble";
 
-		const spacer = new St.Widget({x_expand: true});
-		headerBox.add_child(spacer);
+		// 1. Message Text
+		const label = new St.Label();
+		label.style_class = "message-text";
+		try {
+			label.clutter_text.set_markup(Utils.formatMessage(content));
+		} catch (e) {
+			label.clutter_text.set_text(content);
+		}
+		label.clutter_text.line_wrap = true;
+		label.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+		// Ensure text expands to fill bubble, but leaves space on right via CSS padding
+		label.x_expand = true;
+		label.y_expand = true;
 
-		const copyBtn = new St.Button({style_class: "copy-button"});
+		bubbleWidget.add_child(label);
+
+		// 2. Copy Button (Overlay - Top Right/Center)
+		const copyBtn = new St.Button({
+			style_class: "copy-button",
+			x_align: Clutter.ActorAlign.END,
+			y_align: Clutter.ActorAlign.CENTER,
+			x_expand: true,
+			y_expand: true,
+		});
 		const copyIcon = new St.Icon({icon_name: "edit-copy-symbolic", icon_size: 14});
 		copyBtn.set_child(copyIcon);
 		copyBtn.connect("clicked", () => {
@@ -427,36 +496,33 @@ export default class SimpleAiAssistantExtension extends Extension {
 				return false;
 			});
 		});
-		headerBox.add_child(copyBtn);
-		msgBox.add_child(headerBox);
 
-		const label = new St.Label();
-		label.style_class = "message-text";
-		try {
-			label.clutter_text.set_markup(Utils.formatMessage(content));
-		} catch (e) {
-			label.clutter_text.set_text(content);
-		}
-		label.clutter_text.line_wrap = true;
-		label.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
-		msgBox.add_child(label);
+		bubbleWidget.add_child(copyBtn);
 
+		msgRow.add_child(bubbleWidget);
+
+		// Run Buttons and such (Append below the text, inside the row but outside the 'bubble' text area if needed,
+		// but typically we want them associated.
+		// If we put them in msgRow, they stack vertically below the bubbleWidget.
 		const matches = content.matchAll(/\[RUN: (.*?)\]/g);
 		for (const m of matches) {
 			const cmd = m[1];
 			const btn = new St.Button();
 			btn.style_class = "run-button";
 			btn.label = `Run: ${cmd.length > 25 ? cmd.substring(0, 25) + "..." : cmd}`;
+			// Ensure it doesn't stretch to full width
+			btn.x_align = Clutter.ActorAlign.START;
+
 			btn.connect("clicked", () => {
 				btn.hide();
-				this._runCommand(cmd, msgBox);
+				this._runCommand(cmd, msgRow);
 			});
-			msgBox.add_child(btn);
+			msgRow.add_child(btn);
 		}
 
-		this._chatBox.add_child(msgBox);
+		this._chatBox.add_child(msgRow);
 		this._scrollToBottom();
-		return msgBox;
+		return msgRow;
 	}
 
 	_scrollToBottom() {
@@ -479,11 +545,16 @@ export default class SimpleAiAssistantExtension extends Extension {
 			text: "Executing...",
 			style_class: "terminal-text",
 			x_expand: true,
+			y_align: Clutter.ActorAlign.CENTER,
 		});
 		headerBox.add_child(label);
 
 		// Cancel button for command execution
-		const cancelBtn = new St.Button({label: "Cancel", style_class: "cancel-button"});
+		const cancelBtn = new St.Button({
+			label: "Cancel",
+			style_class: "cancel-button",
+			x_align: Clutter.ActorAlign.START,
+		});
 		this._commandCancellable = new Gio.Cancellable();
 		let commandPid = null;
 
