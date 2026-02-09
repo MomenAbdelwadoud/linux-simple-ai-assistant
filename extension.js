@@ -251,7 +251,7 @@ export default class SimpleAiAssistantExtension extends Extension {
 		if (this._history && this._history.filter(m => m.role !== "system").length > 0) {
 			this._history
 				.filter(m => m.role !== "system")
-				.forEach(m => this._addMessageToUi(m.role, m.content));
+				.forEach(m => this._addMessageToUi(m.role, m.content, m));
 		} else {
 			this._showEmptyState();
 		}
@@ -339,8 +339,9 @@ export default class SimpleAiAssistantExtension extends Extension {
 			}
 		}
 
-		this._history.push({role: "user", content: text});
-		this._addMessageToUi("user", text);
+		const msg = {role: "user", content: text};
+		this._history.push(msg);
+		this._addMessageToUi(msg.role, msg.content, msg);
 		await this._getAiResponse();
 	}
 
@@ -369,6 +370,7 @@ export default class SimpleAiAssistantExtension extends Extension {
 				style_class: "message-text",
 				y_align: Clutter.ActorAlign.CENTER,
 			});
+			loadingLabel.style = "margin-right: 12px;"; // Added gap
 			loadingBox.add_child(loadingLabel);
 
 			const cancelBtn = new St.Button({
@@ -399,8 +401,9 @@ export default class SimpleAiAssistantExtension extends Extension {
 				this._chatBox.remove_child(loadingBox);
 				this._cancellable = null;
 
-				this._history.push({role: "assistant", content: response});
-				this._addMessageToUi("assistant", response);
+				const msg = {role: "assistant", content: response};
+				this._history.push(msg);
+				this._addMessageToUi(msg.role, msg.content, msg);
 				History.saveHistory(
 					this._history,
 					this._settings.get_int("history-limit"),
@@ -437,37 +440,60 @@ export default class SimpleAiAssistantExtension extends Extension {
 		this._showEmptyState();
 	}
 
-	_addMessageToUi(role, content) {
+	_addMessageToUi(role, content, messageObj = null) {
 		if (!content) return null;
 		if (this._emptyState) {
 			this._chatBox.remove_child(this._emptyState);
 			this._emptyState = null;
 		}
 
-		// Main container for the message row (handles alignment and width)
-		// For user: right aligned, max 90% width (handled by CSS + alignment)
-		// For assistant: full width
+		const isCommandOutput =
+			content.startsWith('COMMAND OUTPUT for "') ||
+			content.startsWith('COMMAND ERROR for "') ||
+			content.startsWith('COMMAND TIMEOUT for "');
+
+		// Main container for the message row
 		const msgRow = new St.BoxLayout({
 			vertical: true,
 			x_expand: true,
-			x_align: role === "user" ? Clutter.ActorAlign.END : Clutter.ActorAlign.FILL,
+			x_align: isCommandOutput
+				? Clutter.ActorAlign.START
+				: role === "user"
+					? Clutter.ActorAlign.END
+					: Clutter.ActorAlign.FILL,
 		});
-		msgRow.style_class =
-			role === "user" ? "user-msg-container" : "assistant-msg-container";
+
+		msgRow.style_class = isCommandOutput
+			? "command-output-container"
+			: role === "user"
+				? "user-msg-container"
+				: "assistant-msg-container";
 
 		// The bubble itself (visual container)
-		const bubbleWidget = new St.Widget({
-			layout_manager: new Clutter.BinLayout(),
+		const bubbleWidget = new St.BoxLayout({
+			vertical: false,
+			style: "spacing: 8px;",
 			x_expand: false,
 			y_expand: false,
-			x_align: role === "user" ? Clutter.ActorAlign.END : Clutter.ActorAlign.START,
+			x_align: isCommandOutput
+				? Clutter.ActorAlign.START
+				: role === "user"
+					? Clutter.ActorAlign.END
+					: Clutter.ActorAlign.START,
 		});
+
 		// Apply style class to the bubble widget
-		bubbleWidget.style_class = role === "user" ? "user-bubble" : "assistant-bubble";
+		if (isCommandOutput) {
+			bubbleWidget.style_class = "terminal-box";
+			bubbleWidget.x_expand = true; // Command outputs should show their importance
+		} else {
+			bubbleWidget.style_class =
+				role === "user" ? "user-bubble" : "assistant-bubble";
+		}
 
 		// 1. Message Text
 		const label = new St.Label({
-			style_class: "message-text",
+			style_class: isCommandOutput ? "terminal-text" : "message-text",
 			x_expand: true,
 			y_expand: false,
 			x_align: Clutter.ActorAlign.FILL,
@@ -494,36 +520,39 @@ export default class SimpleAiAssistantExtension extends Extension {
 		const copyIcon = new St.Icon({icon_name: "edit-copy-symbolic", icon_size: 14});
 		copyBtn.set_child(copyIcon);
 		copyBtn.connect("clicked", () => {
-			// Copy plain text content to clipboard
 			const clipboard = St.Clipboard.get_default();
 			clipboard.set_text(St.ClipboardType.CLIPBOARD, content);
-			// Visual feedback
 			copyIcon.icon_name = "emblem-ok-symbolic";
 			GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1500, () => {
 				copyIcon.icon_name = "edit-copy-symbolic";
 				return false;
 			});
 		});
-
 		bubbleWidget.add_child(copyBtn);
 
 		msgRow.add_child(bubbleWidget);
 
-		// Run Buttons and such (Append below the text, inside the row but outside the 'bubble' text area if needed,
-		// but typically we want them associated.
-		// If we put them in msgRow, they stack vertically below the bubbleWidget.
+		// Run Buttons
 		const matches = content.matchAll(/\[RUN: (.*?)\]/g);
 		for (const m of matches) {
 			const cmd = m[1];
+
+			// Check if already executed in history
+			const isExecuted =
+				messageObj &&
+				messageObj.executed_commands &&
+				messageObj.executed_commands.includes(cmd);
+
+			if (isExecuted) continue;
+
 			const btn = new St.Button();
 			btn.style_class = "run-button";
 			btn.label = `Run: ${cmd.length > 25 ? cmd.substring(0, 25) + "..." : cmd}`;
-			// Ensure it doesn't stretch to full width
 			btn.x_align = Clutter.ActorAlign.START;
 
 			btn.connect("clicked", () => {
 				btn.hide();
-				this._runCommand(cmd, msgRow);
+				this._runCommand(cmd, msgRow, messageObj);
 			});
 			msgRow.add_child(btn);
 		}
@@ -543,7 +572,7 @@ export default class SimpleAiAssistantExtension extends Extension {
 		});
 	}
 
-	async _runCommand(cmd, msgBox) {
+	async _runCommand(cmd, msgBox, messageObj = null) {
 		const box = new St.BoxLayout();
 		box.vertical = true;
 		box.style_class = "terminal-box";
@@ -580,7 +609,26 @@ export default class SimpleAiAssistantExtension extends Extension {
 			label.text = "Cancelled";
 		});
 		headerBox.add_child(cancelBtn);
+
+		const copyBtn = new St.Button({
+			style_class: "copy-button",
+			visible: false,
+		});
+		const copyIcon = new St.Icon({icon_name: "edit-copy-symbolic", icon_size: 14});
+		copyBtn.set_child(copyIcon);
+		copyBtn.connect("clicked", () => {
+			const clipboard = St.Clipboard.get_default();
+			clipboard.set_text(St.ClipboardType.CLIPBOARD, label.text);
+			copyIcon.icon_name = "emblem-ok-symbolic";
+			GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1500, () => {
+				copyIcon.icon_name = "edit-copy-symbolic";
+				return false;
+			});
+		});
+		headerBox.add_child(copyBtn);
+
 		box.add_child(headerBox);
+		box.add_child(label); // Separate label for output
 		msgBox.add_child(box);
 
 		try {
@@ -588,40 +636,83 @@ export default class SimpleAiAssistantExtension extends Extension {
 			let actualCmd = cmd;
 			if (cmd.trim().startsWith("sudo ")) {
 				const innerCmd = cmd.trim().substring(5);
+				// Use -- to ensure arguments are handled correctly
 				actualCmd = `pkexec bash -c '${innerCmd.replace(/'/g, "'\\''")}'`;
 				label.text = "Authentication required...";
 			}
 
-			const [res, stdout, stderr] = await this._spawnCommandLineAsyncWithTimeout(
-				actualCmd,
-				TIMEOUT_SECONDS,
-			);
+			const [res, stdout, stderr, exitStatus] =
+				await this._spawnCommandLineAsyncWithTimeout(actualCmd, TIMEOUT_SECONDS);
 			cancelBtn.hide();
 
 			const decoder = new TextDecoder("utf-8");
 			const out = decoder.decode(new Uint8Array(stdout.get_data())).trim();
 			const err = decoder.decode(new Uint8Array(stderr.get_data())).trim();
-			const result = out || err || "Done (no output)";
-			label.text = result.split("\n").slice(-5).join("\n");
-			this._history.push({
+
+			let result = out || err;
+			if (!result) {
+				if (exitStatus === 0) {
+					result = "Done (no output)";
+				} else {
+					result = `Command failed with status ${exitStatus} (no output)`;
+					// Specific pkexec/sudo failure message
+					if (cmd.trim().startsWith("sudo ") && exitStatus !== 0) {
+						result +=
+							"\nNote: Authentication might have been dismissed or failed.";
+					}
+				}
+			}
+
+			label.text = result;
+			copyBtn.show();
+
+			// Remove the temporary box from the current message row before adding the permanent output message
+			msgBox.remove_child(box);
+
+			// Mark as executed in message metadata
+			if (messageObj) {
+				if (!messageObj.executed_commands) messageObj.executed_commands = [];
+				if (!messageObj.executed_commands.includes(cmd)) {
+					messageObj.executed_commands.push(cmd);
+				}
+			}
+
+			const outputMsg = {
 				role: "user",
-				content: `COMMAND OUTPUT for "${cmd}":\n${result}`,
-			});
+				content: `COMMAND OUTPUT for "${cmd}" (exit status ${exitStatus}):\n${result}`,
+			};
+			this._history.push(outputMsg);
+			History.saveHistory(this._history, this._settings.get_int("history-limit"));
+			this._addMessageToUi(outputMsg.role, outputMsg.content, outputMsg);
 			await this._getAiResponse();
 		} catch (e) {
 			cancelBtn.hide();
 			if (e.message === "Command timed out") {
-				label.text = `Timeout: Command exceeded ${TIMEOUT_SECONDS}s limit`;
-				this._history.push({
+				msgBox.remove_child(box);
+				const timeoutMsg = {
 					role: "user",
 					content: `COMMAND TIMEOUT for "${cmd}": Exceeded ${TIMEOUT_SECONDS} seconds`,
-				});
+				};
+				this._history.push(timeoutMsg);
+				History.saveHistory(
+					this._history,
+					this._settings.get_int("history-limit"),
+				);
+				this._addMessageToUi(timeoutMsg.role, timeoutMsg.content, timeoutMsg);
 			} else if (e.message === "Cancelled") {
 				label.text = "Command cancelled";
 			} else {
-				const errorMsg = `COMMAND ERROR for "${cmd}":\n${e.message}`;
-				label.text = `Error: ${e.message}`;
-				this._history.push({role: "user", content: errorMsg});
+				msgBox.remove_child(box);
+				const errorMsg = {
+					role: "user",
+					content: `COMMAND ERROR for "${cmd}":\n${e.message}`,
+				};
+				this._history.push(errorMsg);
+				History.saveHistory(
+					this._history,
+					this._settings.get_int("history-limit"),
+				);
+				this._addMessageToUi(errorMsg.role, errorMsg.content, errorMsg);
 			}
 			await this._getAiResponse();
 		} finally {
@@ -668,9 +759,11 @@ export default class SimpleAiAssistantExtension extends Extension {
 					},
 				);
 
+				let exitStatus = -1;
 				// Add child watch to reap the process
-				GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, () => {
+				GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, (pid, status) => {
 					completed = true;
+					exitStatus = status;
 					GLib.Source.remove(timeoutId);
 				});
 
@@ -710,7 +803,7 @@ export default class SimpleAiAssistantExtension extends Extension {
 						}
 						return GLib.Bytes.new(u);
 					};
-					resolve([true, merge(ob), merge(eb)]);
+					resolve([true, merge(ob), merge(eb), exitStatus]);
 				});
 			} catch (e) {
 				reject(e);
