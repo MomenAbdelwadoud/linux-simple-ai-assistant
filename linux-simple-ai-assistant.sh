@@ -36,7 +36,7 @@ case "$1" in
     ;;
   translate)
     reffile=simple-ai-assistant.pot
-    xgettext --from-code=UTF-8 --output=po/"$reffile" $extension/*.js $extension/schemas/*.xml
+    xgettext --from-code=UTF-8 --output=po/"$reffile" *.js schemas/*.xml
     cd po
     for pofile in *.po
       do
