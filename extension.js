@@ -21,7 +21,7 @@ import Pango from "gi://Pango";
 import Shell from "gi://Shell";
 import St from "gi://St";
 
-import {Extension} from "resource:///org/gnome/shell/extensions/extension.js";
+import {Extension, gettext as _} from "resource:///org/gnome/shell/extensions/extension.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as PanelMenu from "resource:///org/gnome/shell/ui/panelMenu.js";
 
@@ -176,7 +176,7 @@ export default class SimpleAiAssistantExtension extends Extension {
 
 		const newChatBtn = new St.Button();
 		newChatBtn.style_class = "button";
-		newChatBtn.label = "New Chat";
+		newChatBtn.label = _("New Chat");
 		newChatBtn.connect("clicked", () => this._newChat());
 
 		header.add_child(title);
@@ -202,7 +202,7 @@ export default class SimpleAiAssistantExtension extends Extension {
 
 		this._apiReminder = new St.Label({
 			style_class: "api-reminder",
-			text: "⚠️ Please add your API Key in settings if you haven't already",
+			text: _("⚠️ Please add your API Key in settings if you haven't already"),
 			visible: false,
 		});
 		bottomArea.add_child(this._apiReminder);
@@ -214,7 +214,7 @@ export default class SimpleAiAssistantExtension extends Extension {
 
 		this._input = new St.Entry();
 		this._input.style_class = "chat-input";
-		this._input.hint_text = "Type a message...";
+		this._input.hint_text = _("Type a message...");
 		this._input.x_expand = true;
 		this._input.clutter_text.connect("activate", () => this._sendMessage());
 
@@ -283,9 +283,9 @@ export default class SimpleAiAssistantExtension extends Extension {
 		this._emptyState.add_child(title);
 
 		const examples = [
-			"My bluetooth doesn't turn on",
-			"Check why my system's resource usage is high",
-			"How to take a screenshot in GNOME?",
+			_("My bluetooth doesn't turn on"),
+			_("Check why my system's resource usage is high"),
+			_("How to take a screenshot in GNOME?"),
 		];
 
 		examples.forEach(ex => {
@@ -334,8 +334,8 @@ export default class SimpleAiAssistantExtension extends Extension {
 			this._settings.get_boolean("send-device-info")
 		) {
 			const info = Device.getDeviceInfo();
-			if (!this._history[0].content.includes("User System Info:")) {
-				this._history[0].content += "\n\nUser System Info:\n" + info;
+			if (!this._history[0].content.includes(_("User System Info:"))) {
+				this._history[0].content += _("\n\nUser System Info:\n") + info;
 			}
 		}
 
@@ -355,7 +355,7 @@ export default class SimpleAiAssistantExtension extends Extension {
 			if (!apiKey) {
 				this._addMessageToUi(
 					"assistant",
-					"<b>API Key missing!</b> Please go to settings.",
+					_("<b>API Key missing!</b> Please go to settings."),
 				);
 				return;
 			}
@@ -413,7 +413,7 @@ export default class SimpleAiAssistantExtension extends Extension {
 				this._cancellable = null;
 
 				if (e.matches && e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {
-					this._addMessageToUi("assistant", "_Request cancelled._");
+					this._addMessageToUi("assistant", _("_Request cancelled._"));
 				} else {
 					this._addMessageToUi("assistant", `Error: ${e.message}`);
 				}

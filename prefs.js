@@ -168,13 +168,13 @@ export default class SimpleAiAssistantPreferences extends ExtensionPreferences {
 		});
 
 		const shortcutBtn = new Gtk.Button({
-			label: "Set",
+			label: _("Set"),
 			valign: Gtk.Align.CENTER,
 			margin_start: 8,
 		});
 
 		const clearBtn = new Gtk.Button({
-			label: "Clear",
+			label: _("Clear"),
 			valign: Gtk.Align.CENTER,
 			margin_start: 4,
 		});

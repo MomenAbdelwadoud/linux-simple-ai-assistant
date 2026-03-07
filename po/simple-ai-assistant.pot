@@ -1,0 +1,198 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-03-07 18:01+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: extension.js:179
+msgid "New Chat"
+msgstr ""
+
+#: extension.js:205
+msgid "⚠️ Please add your API Key in settings if you haven't already"
+msgstr ""
+
+#: extension.js:217
+msgid "Type a message..."
+msgstr ""
+
+#: extension.js:286
+msgid "My bluetooth doesn't turn on"
+msgstr ""
+
+#: extension.js:287
+msgid "Check why my system's resource usage is high"
+msgstr ""
+
+#: extension.js:288
+msgid "How to take a screenshot in GNOME?"
+msgstr ""
+
+#: extension.js:337
+msgid "User System Info:"
+msgstr ""
+
+#: extension.js:338
+msgid ""
+"\n"
+"\n"
+"User System Info:\n"
+msgstr ""
+
+#: extension.js:358
+msgid "<b>API Key missing!</b> Please go to settings."
+msgstr ""
+
+#: extension.js:416
+msgid "_Request cancelled._"
+msgstr ""
+
+#: prefs.js:17
+msgid "API Settings"
+msgstr ""
+
+#: prefs.js:21
+#: schemas/org.gnome.shell.extensions.simple-ai-assistant.gschema.xml:6
+msgid "API Provider"
+msgstr ""
+
+#: prefs.js:29
+msgid "Gemini API Key"
+msgstr ""
+
+#: prefs.js:30
+msgid "Gemini Model"
+msgstr ""
+
+#: prefs.js:31
+msgid "OpenAI API Key"
+msgstr ""
+
+#: prefs.js:32
+msgid "OpenAI Model"
+msgstr ""
+
+#: prefs.js:33
+msgid "Claude API Key"
+msgstr ""
+
+#: prefs.js:34
+msgid "Claude Model"
+msgstr ""
+
+#: prefs.js:115
+msgid "Appearance"
+msgstr ""
+
+#: prefs.js:119
+msgid "Window Width"
+msgstr ""
+
+#: prefs.js:120
+msgid "Adjust width (400px - 1200px)"
+msgstr ""
+
+#: prefs.js:138
+msgid "Window Height"
+msgstr ""
+
+#: prefs.js:139
+msgid "Adjust height (400px - 1600px)"
+msgstr ""
+
+#: prefs.js:157
+msgid "Keyboard Shortcut"
+msgstr ""
+
+#: prefs.js:161
+msgid "Open Assistant"
+msgstr ""
+
+#: prefs.js:162
+msgid "Press keys to set shortcut, or leave empty to disable"
+msgstr ""
+
+#: prefs.js:171
+msgid "Set"
+msgstr ""
+
+#: prefs.js:177
+msgid "Clear"
+msgstr ""
+
+#: prefs.js:197
+msgid "General Settings"
+msgstr ""
+
+#: prefs.js:201
+msgid "History Context Limit"
+msgstr ""
+
+#: prefs.js:202
+msgid "Messages kept in context (10-50)"
+msgstr ""
+
+#: prefs.js:220
+msgid "Share System Details"
+msgstr ""
+
+#: prefs.js:222
+msgid "Sends CPU, GPU, RAM, and OS info to AI for better technical answers"
+msgstr ""
+
+#: prefs.js:234
+msgid "Information"
+msgstr ""
+
+#: prefs.js:238
+msgid "Privacy"
+msgstr ""
+
+#: prefs.js:240
+msgid ""
+"No data is collected anywhere. All chat history is stored locally on your "
+"machine."
+msgstr ""
+
+#: prefs.js:250
+msgid "Developed by Momen Elkhalifa"
+msgstr ""
+
+#: prefs.js:251
+msgid "Visit website: momen.codes"
+msgstr ""
+
+#: schemas/org.gnome.shell.extensions.simple-ai-assistant.gschema.xml:28
+msgid "Keyboard shortcut to open the assistant"
+msgstr ""
+
+#: schemas/org.gnome.shell.extensions.simple-ai-assistant.gschema.xml:32
+msgid ""
+"Share system details (CPU, GPU, RAM, OS version) with the AI for better "
+"technical assistance."
+msgstr ""
+
+#: schemas/org.gnome.shell.extensions.simple-ai-assistant.gschema.xml:36
+msgid "History Limit"
+msgstr ""
+
+#: schemas/org.gnome.shell.extensions.simple-ai-assistant.gschema.xml:40
+msgid "Chat Window Height"
+msgstr ""
+
+#: schemas/org.gnome.shell.extensions.simple-ai-assistant.gschema.xml:44
+msgid "Chat Window Width"
+msgstr ""
